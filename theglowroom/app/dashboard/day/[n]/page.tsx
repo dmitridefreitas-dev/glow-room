@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getEnrollmentForUser } from "@/lib/cohort";
 import { saveCheckIn } from "../../actions";
 
@@ -51,6 +52,16 @@ export default async function DayPage({
         .eq("id", user.id)
         .maybeSingle(),
     ]);
+
+  // The bucket is private, so render the saved photo via a short-lived signed URL.
+  let savedPhotoUrl: string | null = null;
+  if (existing?.photo_path) {
+    const admin = createAdminClient();
+    const { data: signed } = await admin.storage
+      .from("checkin-photos")
+      .createSignedUrl(existing.photo_path, 60 * 60);
+    savedPhotoUrl = signed?.signedUrl ?? null;
+  }
 
   const isFuture = day > enrollment.currentDay;
 
@@ -165,6 +176,14 @@ export default async function DayPage({
           <h2 className="mt-4 text-sm font-bold uppercase tracking-wide text-spruce">
             Photo {existing?.photo_path ? "(replaces saved one)" : "(optional)"}
           </h2>
+          {savedPhotoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={savedPhotoUrl}
+              alt={`Your Day ${day} photo`}
+              className="mt-2 max-h-72 rounded-xl border border-line"
+            />
+          )}
           <input
             type="file"
             name="photo"
