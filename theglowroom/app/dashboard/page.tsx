@@ -201,8 +201,10 @@ export default async function DashboardPage({
             >
               {locked ? (
                 <>
-                  <span className="opacity-30">{d}</span>
-                  <span className="absolute text-[11px]">🔒</span>
+                  <span className="opacity-50">{d}</span>
+                  <span className="absolute right-0.5 top-0.5 text-sm leading-none">
+                    🔒
+                  </span>
                 </>
               ) : (
                 d

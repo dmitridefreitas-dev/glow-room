@@ -9,10 +9,10 @@ Supabase). Repo: https://github.com/dmitridefreitas-dev/glow-room
 
 ---
 
-## 2026-06-14 — Locked day cells show faded day number
-**What:** Locked days in the grid now show the **day number at 30% opacity with
-the 🔒 on top**, so you can still see which day it is while seeing it's locked.
-**Files:** `app/dashboard/page.tsx`.
+## 2026-06-14 — Locked day cells styling
+**What:** Locked days show the **day number centered (50% opacity)** with the 🔒
+in the **upper-right corner at full number size**, so the day is clearly readable
+and obviously locked. **Files:** `app/dashboard/page.tsx`.
 
 ---
 
