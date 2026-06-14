@@ -63,9 +63,13 @@ export async function saveCheckIn(formData: FormData) {
     if (!uploadError) payload.photo_path = path;
   }
 
-  await supabase
+  const { error } = await supabase
     .from("check_ins")
     .upsert(payload, { onConflict: "enrollment_id,day_number" });
+
+  if (error) {
+    redirect(`/dashboard/day/${day}?error=${encodeURIComponent(error.message)}`);
+  }
 
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/day/${day}`);

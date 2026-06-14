@@ -2,20 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getEnrollmentForUser } from "@/lib/cohort";
-
-type CheckIn = {
-  day_number: number;
-  movement_done: boolean;
-  skin_done: boolean;
-  mindset_done: boolean;
-  anchor_done: boolean;
-};
-
-const isComplete = (c?: CheckIn) =>
-  !!c && c.movement_done && c.skin_done && c.mindset_done && c.anchor_done;
-const isStarted = (c?: CheckIn) =>
-  !!c &&
-  (c.movement_done || c.skin_done || c.mindset_done || c.anchor_done);
+import {
+  type CheckInRow,
+  dayComplete,
+  dayStarted,
+  doneCount,
+  totalTasks,
+} from "@/lib/progress";
 
 export default async function DashboardPage({
   searchParams,
@@ -49,32 +42,62 @@ export default async function DashboardPage({
     );
   }
 
+  const type = enrollment.challengeType;
+  const total = enrollment.totalDays;
+  const tasksPerDay = totalTasks(type);
+
   const { data: rows } = await supabase
     .from("check_ins")
     .select("day_number, movement_done, skin_done, mindset_done, anchor_done")
     .eq("enrollment_id", enrollment.enrollmentId);
 
-  const byDay = new Map<number, CheckIn>();
-  (rows ?? []).forEach((r) => byDay.set(r.day_number, r as CheckIn));
+  const byDay = new Map<number, CheckInRow>();
+  (rows ?? []).forEach((r) => byDay.set(r.day_number as number, r as CheckInRow));
 
-  const total = enrollment.totalDays;
   let completed = 0;
-  for (const c of byDay.values()) if (isComplete(c)) completed += 1;
+  for (const c of byDay.values()) if (dayComplete(c, type)) completed += 1;
 
   let streak = 0;
   for (let d = 1; d <= total; d++) {
-    if (isComplete(byDay.get(d))) streak += 1;
+    if (dayComplete(byDay.get(d), type)) streak += 1;
     else break;
   }
 
   const name = profile.display_name ?? user!.email?.split("@")[0] ?? "friend";
   const pct = Math.round((completed / total) * 100);
 
+  // Today's progress
+  const today = enrollment.currentDay;
+  const todayCheckIn = byDay.get(today);
+  const todayDone = doneCount(todayCheckIn, type);
+  const todayComplete = dayComplete(todayCheckIn, type);
+
+  // Smart save toast
+  let toast: { ok: boolean; text: string } | null = null;
+  if (sp.saved) {
+    const d = Number(sp.saved);
+    const c = byDay.get(d);
+    const done = doneCount(c, type);
+    if (dayComplete(c, type)) {
+      toast = { ok: true, text: `Day ${d} complete! 🎉 Streak and progress updated.` };
+    } else {
+      toast = {
+        ok: false,
+        text: `Day ${d} saved — ${done} of ${tasksPerDay} tasks done. Tick the rest to complete the day.`,
+      };
+    }
+  }
+
   return (
     <div>
-      {sp.saved && (
-        <div className="mb-5 rounded-xl bg-sage-light px-4 py-3 text-sm font-medium text-spruce">
-          ✓ Day {sp.saved} check-in saved.
+      {toast && (
+        <div
+          className={`mb-5 rounded-xl px-4 py-3 text-sm font-medium text-spruce ${
+            toast.ok ? "bg-sage-light" : "bg-honey-light"
+          }`}
+        >
+          {toast.ok ? "✓ " : ""}
+          {toast.text}
         </div>
       )}
 
@@ -106,9 +129,7 @@ export default async function DashboardPage({
           </div>
         </div>
         <div className="rounded-2xl bg-honey-light p-4 text-center">
-          <div className="text-3xl font-extrabold text-spruce">
-            {enrollment.currentDay}
-          </div>
+          <div className="text-3xl font-extrabold text-spruce">{today}</div>
           <div className="text-[11px] uppercase tracking-wide text-muted">
             Today is day
           </div>
@@ -123,22 +144,33 @@ export default async function DashboardPage({
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="mt-1 text-xs text-muted">{pct}% of the way there.</p>
+        <p className="mt-1 text-xs text-muted">
+          {pct}% of the challenge complete.
+        </p>
       </div>
 
-      {/* Today CTA */}
+      {/* Today CTA with task progress */}
       <Link
-        href={`/dashboard/day/${enrollment.currentDay}`}
+        href={`/dashboard/day/${today}`}
         className="mt-6 flex items-center justify-between rounded-2xl bg-spruce px-6 py-5 text-ivory transition hover:bg-spruce-dark"
       >
         <div>
           <div className="text-xs uppercase tracking-wide text-ivory/70">
-            {isComplete(byDay.get(enrollment.currentDay))
+            {todayComplete
               ? "Done for today ✓"
-              : "Today"}
+              : `Today · ${todayDone} of ${tasksPerDay} tasks done`}
           </div>
-          <div className="text-lg font-bold">
-            Day {enrollment.currentDay} check-in
+          <div className="text-lg font-bold">Day {today} check-in</div>
+          {/* mini task dots */}
+          <div className="mt-2 flex gap-1.5">
+            {Array.from({ length: tasksPerDay }, (_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 w-8 rounded ${
+                  i < todayDone ? "bg-honey" : "bg-ivory/25"
+                }`}
+              />
+            ))}
           </div>
         </div>
         <span className="text-2xl">→</span>
@@ -151,13 +183,13 @@ export default async function DashboardPage({
       <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-10">
         {Array.from({ length: total }, (_, i) => i + 1).map((d) => {
           const c = byDay.get(d);
-          const cls = isComplete(c)
+          const cls = dayComplete(c, type)
             ? "bg-sage text-white"
-            : isStarted(c)
+            : dayStarted(c, type)
               ? "bg-honey-light text-spruce"
               : "bg-white text-muted";
           const ring =
-            d === enrollment.currentDay ? "ring-2 ring-coral" : "border border-line";
+            d === today ? "ring-2 ring-coral" : "border border-line";
           return (
             <Link
               key={d}
@@ -170,9 +202,10 @@ export default async function DashboardPage({
         })}
       </div>
       <p className="mt-3 text-xs text-muted">
-        <span className="inline-block h-2 w-2 rounded-full bg-sage" /> complete ·{" "}
-        <span className="inline-block h-2 w-2 rounded-full bg-honey" /> started ·
-        ring = today
+        <span className="inline-block h-2 w-2 rounded-full bg-sage align-middle" />{" "}
+        complete ·{" "}
+        <span className="inline-block h-2 w-2 rounded-full bg-honey align-middle" />{" "}
+        started · ring = today
       </p>
     </div>
   );

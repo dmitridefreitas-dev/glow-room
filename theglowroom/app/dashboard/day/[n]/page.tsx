@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEnrollmentForUser } from "@/lib/cohort";
+import { doneCount, totalTasks } from "@/lib/progress";
 import { saveCheckIn } from "../../actions";
 
 type Pillar = {
@@ -14,10 +15,13 @@ type Pillar = {
 
 export default async function DayPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ n: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { n } = await params;
+  const { error: saveError } = await searchParams;
   const day = Number(n);
 
   const supabase = await createClient();
@@ -64,6 +68,8 @@ export default async function DayPage({
   }
 
   const isFuture = day > enrollment.currentDay;
+  const tasks = totalTasks(enrollment.challengeType);
+  const done = doneCount(existing ?? undefined, enrollment.challengeType);
 
   const pillars: Pillar[] = [];
   if (content?.movement_task)
@@ -106,6 +112,24 @@ export default async function DayPage({
       </div>
 
       <h1 className="mt-3 text-3xl font-extrabold text-spruce">Day {day}</h1>
+      <p className="mt-1 text-sm text-muted">
+        {done === tasks ? (
+          <span className="font-semibold text-sage">
+            All {tasks} tasks done ✓ — this day counts toward your streak.
+          </span>
+        ) : (
+          <>
+            {done} of {tasks} tasks ticked. Tick all {tasks} to complete the day.
+          </>
+        )}
+      </p>
+
+      {saveError && (
+        <div className="mt-3 rounded-xl bg-coral-light px-4 py-3 text-sm text-spruce">
+          Couldn&apos;t save: {saveError}
+        </div>
+      )}
+
       {day === 8 && (
         <div className="mt-3 rounded-xl bg-honey-light px-4 py-3 text-sm text-spruce">
           <strong>This is the hard day.</strong> Day 8 is when most people quit —
