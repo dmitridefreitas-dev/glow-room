@@ -28,11 +28,15 @@ function cohortOf(row: { cohorts: unknown }) {
   };
 }
 
+/**
+ * The highest day that has "unlocked" for this cohort. Uses UTC dates to match
+ * the database trigger (enforce_checkin_day), so the UI and the DB agree on
+ * exactly which days are open. Resets at 00:00 UTC.
+ */
 function computeCurrentDay(startDate: string | null, totalDays: number): number {
-  if (!startDate) return 1;
-  const start = new Date(`${startDate}T00:00:00`);
-  const diff =
-    Math.floor((Date.now() - start.getTime()) / 86_400_000) + 1;
+  if (!startDate) return totalDays;
+  const startMs = Date.parse(`${startDate}T00:00:00Z`);
+  const diff = Math.floor((Date.now() - startMs) / 86_400_000) + 1;
   return Math.min(Math.max(diff, 1), totalDays);
 }
 

@@ -36,6 +36,17 @@ export async function saveCheckIn(formData: FormData) {
   const day = Number(formData.get("day_number"));
   if (!Number.isInteger(day)) redirect("/dashboard");
 
+  // Anti-cheat: you can only check in for days that have unlocked. The DB
+  // trigger enforces this too; this gives a friendly message before we try.
+  if (day < 1 || day > enrollment.currentDay) {
+    redirect(
+      `/dashboard/day/${day}?error=` +
+        encodeURIComponent(
+          "This day hasn't unlocked yet — a new day opens each midnight."
+        )
+    );
+  }
+
   const payload: Record<string, unknown> = {
     enrollment_id: enrollment.enrollmentId,
     day_number: day,

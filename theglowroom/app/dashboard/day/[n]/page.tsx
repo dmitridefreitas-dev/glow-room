@@ -71,6 +71,17 @@ export default async function DayPage({
   const tasks = totalTasks(enrollment.challengeType);
   const done = doneCount(existing ?? undefined, enrollment.challengeType);
 
+  const unlockMs = enrollment.startDate
+    ? Date.parse(`${enrollment.startDate}T00:00:00Z`) + (day - 1) * 86_400_000
+    : null;
+  const unlockLabel = unlockMs
+    ? new Date(unlockMs).toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+      })
+    : "soon";
+
   const pillars: Pillar[] = [];
   if (content?.movement_task)
     pillars.push({
@@ -112,17 +123,20 @@ export default async function DayPage({
       </div>
 
       <h1 className="mt-3 text-3xl font-extrabold text-spruce">Day {day}</h1>
-      <p className="mt-1 text-sm text-muted">
-        {done === tasks ? (
-          <span className="font-semibold text-sage">
-            All {tasks} tasks done ✓ — this day counts toward your streak.
-          </span>
-        ) : (
-          <>
-            {done} of {tasks} tasks ticked. Tick all {tasks} to complete the day.
-          </>
-        )}
-      </p>
+      {!isFuture && (
+        <p className="mt-1 text-sm text-muted">
+          {done === tasks ? (
+            <span className="font-semibold text-sage">
+              All {tasks} tasks done ✓ — this day counts toward your streak.
+            </span>
+          ) : (
+            <>
+              {done} of {tasks} tasks ticked. Tick all {tasks} to complete the
+              day.
+            </>
+          )}
+        </p>
+      )}
 
       {saveError && (
         <div className="mt-3 rounded-xl bg-coral-light px-4 py-3 text-sm text-spruce">
@@ -130,20 +144,33 @@ export default async function DayPage({
         </div>
       )}
 
-      {day === 8 && (
+      {!isFuture && day === 8 && (
         <div className="mt-3 rounded-xl bg-honey-light px-4 py-3 text-sm text-spruce">
           <strong>This is the hard day.</strong> Day 8 is when most people quit —
           that&apos;s by design, not a sign you&apos;re failing. Do the smallest
           version and just don&apos;t skip. You&apos;ve got this.
         </div>
       )}
-      {isFuture && (
-        <div className="mt-3 rounded-xl bg-teal-light px-4 py-2 text-xs text-spruce">
-          Heads up: in a live cohort this day unlocks later. It&apos;s open now so
-          you can test the flow.
-        </div>
-      )}
 
+      {isFuture ? (
+        <div className="mt-6 rounded-2xl border border-line bg-white p-8 text-center">
+          <div className="text-4xl">🔒</div>
+          <h2 className="mt-3 text-lg font-bold text-spruce">
+            Day {day} is locked
+          </h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
+            It unlocks <strong>{unlockLabel}</strong>. One new day opens every
+            midnight — you can&apos;t skip ahead. That&apos;s what keeps the
+            challenge honest and the leaderboard fair.
+          </p>
+          <Link
+            href={`/dashboard/day/${enrollment.currentDay}`}
+            className="mt-5 inline-block rounded-xl bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90"
+          >
+            Go to today — Day {enrollment.currentDay}
+          </Link>
+        </div>
+      ) : (
       <form action={saveCheckIn} className="mt-6 space-y-4">
         <input type="hidden" name="day_number" value={day} />
 
@@ -246,6 +273,7 @@ export default async function DayPage({
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

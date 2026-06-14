@@ -183,11 +183,14 @@ export default async function DashboardPage({
       <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-10">
         {Array.from({ length: total }, (_, i) => i + 1).map((d) => {
           const c = byDay.get(d);
+          const locked = d > today;
           const cls = dayComplete(c, type)
             ? "bg-sage text-white"
             : dayStarted(c, type)
               ? "bg-honey-light text-spruce"
-              : "bg-white text-muted";
+              : locked
+                ? "bg-ivory text-line"
+                : "bg-white text-muted";
           const ring =
             d === today ? "ring-2 ring-coral" : "border border-line";
           return (
@@ -196,7 +199,7 @@ export default async function DashboardPage({
               href={`/dashboard/day/${d}`}
               className={`flex aspect-square items-center justify-center rounded-xl text-sm font-bold ${cls} ${ring}`}
             >
-              {d}
+              {locked ? <span className="text-xs">🔒</span> : d}
             </Link>
           );
         })}
@@ -205,7 +208,7 @@ export default async function DashboardPage({
         <span className="inline-block h-2 w-2 rounded-full bg-sage align-middle" />{" "}
         complete ·{" "}
         <span className="inline-block h-2 w-2 rounded-full bg-honey align-middle" />{" "}
-        started · ring = today
+        started · 🔒 locked (unlocks at midnight) · ring = today
       </p>
     </div>
   );
