@@ -189,7 +189,7 @@ export default async function DashboardPage({
             : dayStarted(c, type)
               ? "bg-honey-light text-spruce"
               : locked
-                ? "bg-ivory text-line"
+                ? "bg-ivory text-muted"
                 : "bg-white text-muted";
           const ring =
             d === today ? "ring-2 ring-coral" : "border border-line";
@@ -197,9 +197,16 @@ export default async function DashboardPage({
             <Link
               key={d}
               href={`/dashboard/day/${d}`}
-              className={`flex aspect-square items-center justify-center rounded-xl text-sm font-bold ${cls} ${ring}`}
+              className={`relative flex aspect-square items-center justify-center rounded-xl text-sm font-bold ${cls} ${ring}`}
             >
-              {locked ? <span className="text-xs">🔒</span> : d}
+              {locked ? (
+                <>
+                  <span className="opacity-30">{d}</span>
+                  <span className="absolute text-[11px]">🔒</span>
+                </>
+              ) : (
+                d
+              )}
             </Link>
           );
         })}

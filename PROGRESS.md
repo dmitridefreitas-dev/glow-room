@@ -9,6 +9,13 @@ Supabase). Repo: https://github.com/dmitridefreitas-dev/glow-room
 
 ---
 
+## 2026-06-14 — Locked day cells show faded day number
+**What:** Locked days in the grid now show the **day number at 30% opacity with
+the 🔒 on top**, so you can still see which day it is while seeing it's locked.
+**Files:** `app/dashboard/page.tsx`.
+
+---
+
 ## 2026-06-14 — Anti-cheat day-lock + this progress log
 **What:**
 - Added a **day-lock**: you can only check in for days that have unlocked. Day 1
