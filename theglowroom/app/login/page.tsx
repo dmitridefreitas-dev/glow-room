@@ -1,10 +1,14 @@
 import Link from "next/link";
-import { sendMagicLink, signInWithGoogle } from "./actions";
+import {
+  signInWithPassword,
+  signUpWithPassword,
+  signInWithGoogle,
+} from "./actions";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sent?: string; error?: string }>;
+  searchParams: Promise<{ check?: string; error?: string }>;
 }) {
   const sp = await searchParams;
 
@@ -18,16 +22,16 @@ export default async function LoginPage({
           ← The Glow Room
         </Link>
         <h1 className="mt-4 text-2xl font-extrabold text-spruce">
-          Enter the Glow Room
+          Sign in or create your account
         </h1>
         <p className="mt-1 text-sm text-muted">
-          We&apos;ll email you a magic link — no password to remember.
+          Email and a password — that&apos;s it. No codes to wait for.
         </p>
 
-        {sp.sent && (
+        {sp.check && (
           <div className="mt-5 rounded-xl bg-sage-light px-4 py-3 text-sm text-spruce">
-            ✓ Magic link sent to <strong>{sp.sent}</strong>. Check your inbox and
-            click it to sign in.
+            ✓ Account created. Check your email to confirm, then sign in. (If
+            confirmation is turned off, just sign in below.)
           </div>
         )}
         {sp.error && (
@@ -36,25 +40,59 @@ export default async function LoginPage({
           </div>
         )}
 
-        <form action={sendMagicLink} className="mt-6 space-y-3">
-          <label className="block text-sm font-medium text-ink" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="you@email.com"
-            className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none focus:border-teal"
-          />
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-coral px-4 py-3 text-sm font-semibold text-white transition hover:bg-coral/90"
-          >
-            Send me a magic link
-          </button>
+        <form className="mt-6 space-y-3">
+          <div>
+            <label
+              className="block text-sm font-medium text-ink"
+              htmlFor="email"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@email.com"
+              className="mt-1 w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none focus:border-teal"
+            />
+          </div>
+          <div>
+            <label
+              className="block text-sm font-medium text-ink"
+              htmlFor="password"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              minLength={6}
+              autoComplete="current-password"
+              placeholder="at least 6 characters"
+              className="mt-1 w-full rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink outline-none focus:border-teal"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="submit"
+              formAction={signInWithPassword}
+              className="flex-1 rounded-xl bg-coral px-4 py-3 text-sm font-semibold text-white transition hover:bg-coral/90"
+            >
+              Sign in
+            </button>
+            <button
+              type="submit"
+              formAction={signUpWithPassword}
+              className="flex-1 rounded-xl border border-spruce bg-white px-4 py-3 text-sm font-semibold text-spruce transition hover:bg-ivory"
+            >
+              Create account
+            </button>
+          </div>
         </form>
 
         <div className="my-5 flex items-center gap-3 text-xs text-muted">
@@ -71,10 +109,12 @@ export default async function LoginPage({
             Continue with Google
           </button>
         </form>
+        <p className="mt-2 text-center text-[11px] text-muted">
+          Google works once you enable it in Supabase → Auth → Providers.
+        </p>
 
         <p className="mt-6 text-center text-xs text-muted">
-          By continuing you agree to the challenge terms. Members only — access is
-          gated to paying cohort members.
+          Members only — access is gated to paying cohort members.
         </p>
       </div>
     </main>
