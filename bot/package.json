@@ -1,0 +1,12 @@
+{
+  "name": "glow-room-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node verify-bot.mjs"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3"
+  }
+}

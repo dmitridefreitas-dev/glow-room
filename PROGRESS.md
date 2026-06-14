@@ -9,6 +9,83 @@ Supabase). Repo: https://github.com/dmitridefreitas-dev/glow-room
 
 ---
 
+# ▶ NEXT STEPS & VERIFICATION CHECKS
+_Kept current. Do these in order. After each step, run the listed checks before
+moving on._
+
+### NOW — make Phase 4 (payments + Discord) work locally
+1. **Apply migrations 0001 → 0003** in Supabase SQL Editor (if not already).
+   - _Check:_ `select count(*) from public.challenge_days;` returns 37; the
+     `cohort_leaderboard` function exists.
+2. **Run the Stripe setup script** — from `theglowroom/`:
+   `node --env-file=.env.local scripts/setup-stripe.mjs`
+   - _Check:_ it prints a `STRIPE_MEMBERSHIP_PRICE_ID=price_…`; a "Glow Up — Test
+     Cohort" row appears in `cohorts` with a `stripe_price_id`.
+3. **Add the printed membership price id** to `theglowroom/.env.local`
+   (`STRIPE_MEMBERSHIP_PRICE_ID=price_…`) and restart `npm run dev`.
+   - _Check:_ `/join` shows the cohort with a "Join — $18" button and the $9/mo
+     button is enabled.
+4. **Install the Stripe CLI**, then run:
+   `stripe listen --forward-to localhost:3000/api/webhooks/stripe`
+   - _Check:_ it prints a `whsec_…`. Put it in `.env.local` as
+     `STRIPE_WEBHOOK_SECRET=` and restart dev.
+5. **Test a purchase:** `/join` → Join → pay with card `4242 4242 4242 4242` →
+   you land on `/welcome`.
+   - _Check:_ `stripe listen` shows `checkout.session.completed`; `/welcome`
+     shows an access code; a row exists in `enrollments` + `access_codes`.
+6. **Run the Discord bot** — in `bot/`: `npm install` once, then
+   `node --env-file=../theglowroom/.env.local verify-bot.mjs`.
+   Bot must have **Manage Roles** and its role above the Member role.
+   - _Check:_ console says "Bot online" + "Registered /verify"; in Discord
+     `/verify code:GLW-…` grants the Member role and the code can't be reused.
+
+### NEXT — Phase 5: polish & pre-deploy
+- Real sales/landing copy; pre-cohort/countdown dashboard state; empty/error
+  states; mobile QA (esp. TikTok in-app browser); display-name editing.
+  - _Check after:_ click every route logged-out and logged-in with no console
+    errors; Lighthouse mobile pass; `npm run build` succeeds.
+
+### THEN — Phase 6: deploy (folds in Sentry + push)
+- Deploy `theglowroom/` to **Vercel**; set all env vars there.
+  - _Check:_ production URL loads; sign-up/login works against Supabase.
+- Create the **production Stripe webhook** → put real `whsec_` in Vercel.
+  - _Check:_ a live test purchase provisions an enrollment + code.
+- Buy domain → set `NEXT_PUBLIC_APP_URL`; switch Stripe to **live** keys.
+- Host the **Discord bot** (Railway/Fly).
+  - _Check:_ `/verify` works against the deployed API.
+- **Sentry**: add `@sentry/nextjs`.
+  - _Check:_ a thrown test error appears in the Sentry dashboard.
+- **Push notifications** (Day-8 nudge): service worker + Web Push/OneSignal + a
+  scheduled sender (cron).
+  - _Check:_ a scheduled test push arrives on a subscribed device.
+
+---
+
+## 2026-06-14 — Phase 4: Stripe checkout, webhook provisioning, Discord bot
+**What:**
+- **Checkout** (`/join` → `/api/checkout`): one-time cohort ($18) and monthly
+  membership ($9) via Stripe Checkout; metadata carries user + cohort.
+- **Webhook** (`/api/webhooks/stripe`): on `checkout.session.completed` creates
+  the enrollment + a **single-use access code** and emails it (Resend);
+  membership creates a subscription row. Handles subscription cancel and
+  refund/chargeback by revoking the enrollment + removing the Discord role.
+  Idempotent (skips if already enrolled).
+- **`/welcome`**: shows the access code after purchase.
+- **Billing portal** (`/api/portal`): self-serve manage/cancel.
+- **Discord redeem** (`/api/discord/redeem`): bot-secret-guarded; validates +
+  burns the code, links the Discord account.
+- **Verify bot** (`bot/`): standalone discord.js bot; `/verify code:…` calls the
+  redeem API and grants the Member role.
+- **Setup script** (`scripts/setup-stripe.mjs`): creates Stripe products/prices
+  + a purchasable cohort.
+- Libs: `lib/stripe.ts`, `lib/access-codes.ts`, `lib/email.ts`, `lib/discord.ts`.
+  Dashboard links to `/join` + billing.
+
+**ACTION REQUIRED:** See the **NEXT STEPS** checklist above (setup script, Stripe
+CLI for the webhook secret, run the bot).
+
+---
+
 ## 2026-06-14 — Phase 3a: leaderboard, badges, analytics
 **What:**
 - **Leaderboard** (`/dashboard/leaderboard`): ranks the cohort by completed days

@@ -256,6 +256,18 @@ export default async function DashboardPage({
         <span className="inline-block h-2 w-2 rounded-full bg-honey align-middle" />{" "}
         started · 🔒 locked (unlocks at midnight) · ring = today
       </p>
+
+      {/* Account links */}
+      <div className="mt-8 flex flex-wrap gap-4 border-t border-line pt-5 text-xs text-muted">
+        <Link href="/join" className="font-semibold text-teal">
+          Join a cohort / membership →
+        </Link>
+        <form action="/api/portal" method="post">
+          <button type="submit" className="font-semibold text-teal">
+            Manage billing →
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
