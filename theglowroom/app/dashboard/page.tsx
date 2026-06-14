@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getEnrollmentForUser } from "@/lib/cohort";
+import { syncBadges } from "@/lib/badges";
 import {
   type CheckInRow,
   dayComplete,
@@ -65,6 +66,9 @@ export default async function DashboardPage({
 
   const name = profile.display_name ?? user!.email?.split("@")[0] ?? "friend";
   const pct = Math.round((completed / total) * 100);
+
+  // Award + fetch collectible badges.
+  const badges = await syncBadges(user!.id, { completed, streak, total, type });
 
   // Today's progress
   const today = enrollment.currentDay;
@@ -175,6 +179,39 @@ export default async function DashboardPage({
         </div>
         <span className="text-2xl">→</span>
       </Link>
+
+      {/* Leaderboard link */}
+      <Link
+        href="/dashboard/leaderboard"
+        className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-white px-6 py-4 transition hover:border-teal"
+      >
+        <div>
+          <div className="font-bold text-spruce">🏆 Leaderboard</div>
+          <div className="text-xs text-muted">
+            See how you rank against the cohort.
+          </div>
+        </div>
+        <span className="text-xl text-teal">→</span>
+      </Link>
+
+      {/* Badges */}
+      <h2 className="mt-8 text-sm font-bold uppercase tracking-[0.15em] text-teal">
+        Badges
+      </h2>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {badges.map((b) => (
+          <span
+            key={b.key}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+              b.earned
+                ? "bg-honey-light text-spruce"
+                : "border border-line bg-white text-line"
+            }`}
+          >
+            {b.earned ? "★" : "🔒"} {b.label}
+          </span>
+        ))}
+      </div>
 
       {/* Day grid */}
       <h2 className="mt-8 text-sm font-bold uppercase tracking-[0.15em] text-teal">

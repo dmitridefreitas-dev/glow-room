@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AnalyticsInit } from "./providers";
 
 export const metadata: Metadata = {
   title: "The Glow Room — 30-Day Glow Up Challenge",
@@ -14,7 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <AnalyticsInit />
+        {children}
+      </body>
     </html>
   );
 }

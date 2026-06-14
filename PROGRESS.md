@@ -9,6 +9,32 @@ Supabase). Repo: https://github.com/dmitridefreitas-dev/glow-room
 
 ---
 
+## 2026-06-14 — Phase 3a: leaderboard, badges, analytics
+**What:**
+- **Leaderboard** (`/dashboard/leaderboard`): ranks the cohort by completed days
+  via a privacy-safe SQL function (`cohort_leaderboard`, SECURITY DEFINER —
+  exposes only name + counts). Because of the day-lock, completed days can't
+  exceed days elapsed, so it can't be gamed. Highlights "you"; medals for top 3.
+- **Badges** (collector mechanic): milestone badges (First Day, 7-Day Streak,
+  Halfway, Challenge Complete) auto-awarded on dashboard load and shown as
+  earned/locked chips. `lib/badges.ts` + new badge rows.
+- **PostHog analytics**: initialised client-side with autocapture + pageviews,
+  and identifies the logged-in user (`app/providers.tsx`, wired in root layout).
+- Dashboard now links to the leaderboard and shows the badge shelf.
+
+**Files:** `supabase/migrations/0003_leaderboard_badges.sql` (new),
+`lib/badges.ts` (new), `app/dashboard/leaderboard/page.tsx` (new),
+`app/providers.tsx` (new), `app/layout.tsx`, `app/dashboard/page.tsx`.
+
+**ACTION REQUIRED:** Run `supabase/migrations/0003_leaderboard_badges.sql` in the
+Supabase SQL Editor.
+
+**Still to do in Phase 3:** Sentry error monitoring (quick) and push
+notifications incl. the Day-8 nudge (needs a service worker + a scheduled sender
++ OneSignal config — best wired alongside deploy).
+
+---
+
 ## 2026-06-14 — Locked day cells styling
 **What:** Locked days show the **day number centered (50% opacity)** with the 🔒
 in the **upper-right corner at full number size**, so the day is clearly readable
