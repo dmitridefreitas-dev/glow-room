@@ -1,0 +1,676 @@
+===============================================================================
+ THE GLOW ROOM — CUSTOM WEB APPLICATION INFRASTRUCTURE PLAN
+ Build specification for the paid, gated, cohort-based challenge platform
+ Prepared as a senior product/infra engineer hand-off document
+ Version 1.0  ·  June 2026
+===============================================================================
+
+This document is the end-to-end technical plan for building the custom web app
+that runs The Glow Room: a buyer pays inside the app (Stripe), is instantly
+provisioned an account + access to the branded challenge dashboard, and receives
+a single-use code that unlocks a private, paying-members-only Discord. It is
+written so a competent full-stack developer (or you) can build it in phases
+without further architectural decisions.
+
+It answers the three questions up front, then specifies the stack, the data
+model, every integration, the exact purchase->access flow, security, hosting,
+cost, edge cases, and a phased build timeline.
+
+
+===============================================================================
+ 0. THE THREE DECISIONS (settled)
+===============================================================================
+
+DECISION 1 — PAYMENTS: STRIPE, NOT SHOPIFY.
+  You are selling ACCESS (a cohort seat + a recurring membership + a gated
+  community), not a boxed physical product. Stripe is purpose-built for this;
+  Shopify is purpose-built for physical commerce and would force you to build
+  custom apps on top of it to do what Stripe does natively.
+
+  Use Stripe for:
+    - Stripe Checkout          -> one-time cohort purchase ($18 Glow Up, $12 Detox)
+    - Stripe Billing           -> $9/mo "Glow Room Monthly" subscription
+    - Stripe Webhooks          -> provision access the instant payment succeeds
+    - Stripe Customer Portal   -> self-serve cancel / update card (no support load)
+    - Stripe Tax (optional)    -> auto sales-tax/VAT handling as you scale
+
+  Use Shopify ONLY later, IF you sell physical merch (hoodies, printed journals).
+  Even then: physical goods on Shopify, all digital access stays on Stripe.
+
+DECISION 2 — THE FLOW: PAY IN-APP -> AUTO-PROVISION -> SINGLE-USE DISCORD CODE.
+  The web app is the single source of truth for "who has paid for what."
+  Discord is a downstream room that the app unlocks via a one-time code.
+  Payment success is the only trigger that grants access. Nothing is manual.
+
+DECISION 3 — PRIVATE ACCESS: ONE-TIME, EXPIRING, NON-SHAREABLE CODE PER PURCHASE.
+  NOT a shared Discord invite link (those leak and can't be revoked per-person).
+  A unique 8-char code is generated per purchase, validated once by a Discord
+  bot against your database, then permanently burned and bound to that one
+  Discord user ID. Delivered in three places: in-app, confirmation email, PDF.
+
+
+===============================================================================
+ 1. SYSTEM ARCHITECTURE (high level)
+===============================================================================
+
+                          +---------------------------+
+                          |        THE BUYER          |
+                          |  (mobile browser, TikTok  |
+                          |     in-app browser)       |
+                          +-------------+-------------+
+                                        |
+                       (1) visits sales page / app
+                                        v
+   +-------------------------------------------------------------------+
+   |                     NEXT.JS WEB APP (Vercel)                       |
+   |   - Marketing/sales page      - Branded member dashboard          |
+   |   - Stripe Checkout redirect  - Daily check-in UI                 |
+   |   - Magic-link auth UI        - Streaks / progress / leaderboard  |
+   |   - /api/* serverless routes  - Account / billing portal link     |
+   +----+--------------------+----------------------+------------------+
+        |                    |                      |
+   (2) checkout         (4) webhook            (6) reads/writes
+        v                    ^                      v
+   +---------+         +-----------+        +----------------------------+
+   | STRIPE  |         | /api/     |        |   SUPABASE (Postgres)      |
+   | Checkout|--(3)--> | webhooks  |--(5)-->|   - users / auth           |
+   | Billing |  event  | (verify   | write  |   - enrollments            |
+   | Portal  |         |  + provision)       |   - check_ins (the data)  |
+   +---------+         +-----+-----+        |   - access_codes           |
+                             |              |   - badges, cohorts        |
+                       (5b) generate code   |   - storage (photos)       |
+                             v              +-------------+--------------+
+                       +-----------+                      |
+                       | EMAIL     |  (5c) send code +     | (7) bot validates
+                       | (Resend)  |       magic link      |     code, burns it
+                       +-----------+                       v
+                                              +----------------------------+
+                                              |   DISCORD + VERIFY BOT     |
+                                              |   - #verify channel        |
+                                              |   - grants Member role     |
+                                              |   - 30 day-channels, etc.  |
+                                              +----------------------------+
+
+   Analytics (PostHog) and Push (OneSignal/Web Push) sit alongside the app,
+   reading the same events. No component is a single point of catastrophic
+   failure: if the app degrades, Discord still works as a check-in fallback.
+
+
+===============================================================================
+ 2. TECHNOLOGY STACK (with justification)
+===============================================================================
+
+  LAYER            CHOICE                 WHY
+  ---------------  ---------------------  --------------------------------------
+  Framework        Next.js (App Router)   SSR for fast mobile first paint; API
+                                          routes = backend in same repo; one
+                                          deploy. Most Gen Z traffic is mobile
+                                          from the TikTok in-app browser.
+  Language         TypeScript             Type safety across the money + access
+                                          paths where bugs are expensive.
+  Styling          Tailwind CSS           Pixel-precise brand control fast;
+                                          consistent design system.
+  Hosting          Vercel                 Zero-config Next.js, global CDN,
+                                          serverless functions, free tier early.
+  DB + Auth        Supabase (Postgres)    Managed Postgres + Auth + Storage +
+                                          Row-Level Security in one. Relational
+                                          model fits cohort/day/check-in cleanly.
+  Auth method      Supabase Auth          Passwordless magic link (+ Google
+                   (magic link + OAuth)   OAuth). Lowest friction for the demo.
+  Payments         Stripe (Checkout,      The correct primitive for access +
+                   Billing, Portal,       subscription + instant provisioning.
+                   Webhooks)
+  Email            Resend (or Postmark)   Transactional: receipt, access code,
+                                          magic link, cohort sequence.
+  Community        Discord + custom bot   Where the audience already lives.
+                   (discord.js) OR        A small custom bot is recommended over
+                   MEE6/Carl-bot          MEE6 for true DB-backed single-use
+                                          codes; MEE6 acceptable for v0.
+  Push             Web Push (PWA) +       Daily reminders + Day-8 nudges without
+                   OneSignal              a native app build.
+  Analytics        PostHog                Drop-off, pillar completion, check-in
+                                          timing = the behavioral moat dataset.
+  Error monitoring Sentry                 Catch failures during a live cohort.
+
+  Everything above has a free or near-free tier through the first several
+  cohorts. Estimated infra cost: ~$0/mo early, ~$50-150/mo at multi-thousand
+  members (see Section 10).
+
+
+===============================================================================
+ 3. DATABASE SCHEMA (Postgres / Supabase)
+===============================================================================
+
+Naming: snake_case, UUID primary keys, created_at/updated_at on every table.
+All access-bearing tables protected by Row-Level Security (RLS).
+
+-- USERS ---------------------------------------------------------------------
+users
+  id                uuid  PK  (mirrors auth.users.id)
+  email             text  unique not null
+  display_name      text
+  discord_user_id   text  unique nullable      -- set after verification
+  habit_anchor      text                        -- chosen in intake quiz
+  notif_opt_in      bool  default true
+  created_at        timestamptz
+
+-- COHORTS (each calendar launch) -------------------------------------------
+cohorts
+  id                uuid  PK
+  challenge_type    text  -- 'glow_up' | 'phone_detox'
+  name              text  -- 'Glow Up - January 2027'
+  start_date        date
+  enroll_open_at    timestamptz
+  enroll_close_at   timestamptz   -- 48h before start_date
+  stripe_price_id   text          -- the one-time price for this cohort
+  status            text  -- 'upcoming' | 'open' | 'active' | 'complete'
+
+-- ENROLLMENTS (a user's seat in a cohort) ----------------------------------
+enrollments
+  id                uuid  PK
+  user_id           uuid  FK -> users
+  cohort_id         uuid  FK -> cohorts
+  stripe_session_id text          -- idempotency / audit
+  status            text  -- 'active' | 'refunded' | 'revoked'
+  completed_day     int   default 0
+  created_at        timestamptz
+  UNIQUE(user_id, cohort_id)
+
+-- SUBSCRIPTIONS (membership) ------------------------------------------------
+subscriptions
+  id                  uuid PK
+  user_id             uuid FK -> users
+  stripe_customer_id  text
+  stripe_sub_id       text unique
+  status              text -- 'active' | 'past_due' | 'canceled'
+  current_period_end  timestamptz
+  created_at          timestamptz
+
+-- CHALLENGE CONTENT LIBRARY (static, per challenge) -------------------------
+challenge_days
+  id              uuid PK
+  challenge_type  text
+  day_number      int          -- 1..30 (glow up) or 1..7 (detox)
+  movement_task   text
+  skin_task       text
+  mindset_prompt  text
+  notes           text
+  UNIQUE(challenge_type, day_number)
+
+-- CHECK-INS (the behavioral dataset = the moat) -----------------------------
+check_ins
+  id              uuid PK
+  enrollment_id   uuid FK -> enrollments
+  day_number      int
+  movement_done   bool
+  skin_done       bool
+  mindset_done    bool
+  anchor_done     bool
+  movement_log    text
+  mindset_answer  text
+  reflection      text
+  photo_path      text          -- Supabase Storage key, PRIVATE
+  created_at      timestamptz
+  UNIQUE(enrollment_id, day_number)
+
+-- ACCESS CODES (single-use Discord unlock) ----------------------------------
+access_codes
+  id                uuid PK
+  code              text unique not null   -- 8 chars, e.g. 'GLW-7QK4'
+  user_id           uuid FK -> users
+  enrollment_id     uuid FK -> enrollments nullable
+  redeemed          bool default false
+  redeemed_by_did   text                    -- Discord user id that redeemed
+  redeemed_at       timestamptz
+  expires_at        timestamptz             -- e.g. 30 days after issue
+  created_at        timestamptz
+
+-- BADGES (cross-challenge collector mechanic) -------------------------------
+badges
+  id              uuid PK
+  key             text   -- 'glow_up_complete', 'glow_legend', 'detox_complete'
+  label           text
+user_badges
+  user_id         uuid FK -> users
+  badge_id        uuid FK -> badges
+  awarded_at      timestamptz
+  PRIMARY KEY(user_id, badge_id)
+
+RLS POLICY SUMMARY:
+  - A user may SELECT/UPDATE only rows where user_id = auth.uid()
+    (their own check_ins, enrollments, photos).
+  - challenge_days is world-readable (static content).
+  - access_codes are writable only by the service role (webhook + bot),
+    never by the end user's client.
+  - Storage bucket 'checkin-photos' is PRIVATE; signed URLs only, scoped
+    to the owning user. Before/after photos go public ONLY via an explicit
+    "share" action that copies to a public bucket with consent recorded.
+
+
+===============================================================================
+ 4. AUTHENTICATION
+===============================================================================
+
+PASSWORDLESS BY DEFAULT (lowest friction for Gen Z mobile):
+  1. After purchase the webhook ensures a users row + Supabase auth user exist.
+  2. The confirmation email contains a magic link (Supabase signInWithOtp).
+  3. One click -> authenticated session (JWT) -> lands on dashboard.
+  4. Google OAuth offered as a one-tap alternative on the login screen.
+
+SESSION:
+  - JWT in an httpOnly secure cookie. Short access token + refresh token.
+  - Middleware (Next.js middleware.ts) guards /dashboard/* : no valid session
+    -> redirect to /login. No active enrollment or subscription -> redirect to
+    /join (the sales/checkout page).
+
+IDENTITY = THE JOIN KEY:
+  users.id ties together every enrollment, subscription, check-in, and badge,
+  which is what makes the cross-challenge badge collector work and what lets
+  you recognize a returning cohort-2 buyer.
+
+
+===============================================================================
+ 5. STRIPE INTEGRATION (the money path)
+===============================================================================
+
+5.1 PRODUCTS & PRICES (create in Stripe dashboard or via API)
+  - Product "Glow Up Challenge"   -> one Price per cohort (one_time, $18 USD).
+                                     New Price per cohort so you can change
+                                     pricing per launch and report cleanly.
+  - Product "Phone Detox"         -> one_time Price ($12).
+  - Product "Glow Room Monthly"   -> recurring Price ($9/mo).
+  - Product "Expansion Packs"     -> one_time Prices ($7-$12) as you add them.
+
+5.2 CHECKOUT (one-time cohort purchase)
+  - Client calls POST /api/checkout {priceId, cohortId}.
+  - Server creates a Stripe Checkout Session:
+        mode: 'payment'
+        line_items: [{ price: <cohort price>, quantity: 1 }]
+        customer_email: prefilled if known
+        metadata: { cohort_id, user_id (if logged in), kind: 'cohort' }
+        success_url: https://app.theglowroom.co/welcome?session_id={CHECKOUT_SESSION_ID}
+        cancel_url:  https://app.theglowroom.co/join
+  - Redirect the browser to session.url. Stripe hosts the payment UI (PCI
+    handled by Stripe; you never touch card data).
+
+5.3 SUBSCRIPTION (membership)
+  - Same pattern, mode: 'subscription', recurring price, metadata.kind='membership'.
+
+5.4 WEBHOOKS (the provisioning trigger) — POST /api/webhooks/stripe
+  Verify signature with STRIPE_WEBHOOK_SECRET. Handle (idempotently):
+
+    checkout.session.completed
+        -> if kind=cohort:   upsert user, create enrollment(status=active),
+                             generate single-use access_code, send email.
+        -> if kind=membership: upsert user, create/refresh subscription row.
+    invoice.paid
+        -> subscription renewed: extend current_period_end.
+    invoice.payment_failed
+        -> mark subscription past_due; trigger dunning email.
+    customer.subscription.deleted
+        -> mark canceled; schedule Discord member-role removal at period end.
+    charge.refunded / charge.dispute.created
+        -> mark enrollment refunded / revoked; queue Discord role removal;
+           invalidate any unredeemed access_code.
+
+  IDEMPOTENCY: store processed Stripe event ids; ignore duplicates (Stripe
+  retries webhooks). Never provision twice for one session_id.
+
+5.5 CUSTOMER PORTAL (self-serve)
+  - /api/portal creates a Billing Portal session -> user manages card / cancels
+    membership themselves. Zero support burden.
+
+5.6 KEYS / ENV (never commit; set in Vercel env):
+    STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PUBLISHABLE_KEY
+
+
+===============================================================================
+ 6. DISCORD INTEGRATION (the private gated community)
+===============================================================================
+
+GOAL: only paying members get in; access is per-person, single-use, revocable.
+
+6.1 SERVER STRUCTURE (set up once)
+  - Welcome:    #welcome (read-only), #verify (where codes are entered),
+                #introductions
+  - Daily:      #day-1 ... #day-30 (the synchronized check-in heart)
+  - Community:  #before-after, #accountability-partners, #wins, #general
+  - Resources:  #resource-drops (read-only)
+  - Leaderboard:#leaderboard (pinned, bot-updated)
+  - Mod:        private mod channels
+  Default @everyone permission: can ONLY see #welcome + #verify. The "Member"
+  role unlocks everything else. This is the gate.
+
+6.2 THE VERIFY BOT — TWO OPTIONS (build either; recommend B for real launch)
+
+  You can gate the community two ways. OPTION A (MEE6/Carl-bot) is the fastest
+  way to get a working v0 with no code. OPTION B (custom discord.js bot) is the
+  real, secure, single-use, revocable system. Both are specified in full below
+  so you can start on A and graduate to B, or skip straight to B.
+
+  -------------------------------------------------------------------------
+  QUICK COMPARISON
+  -------------------------------------------------------------------------
+  CAPABILITY                         OPTION A: MEE6/Carl-bot   OPTION B: Custom
+  ---------------------------------  -----------------------   ---------------
+  Time to set up                     ~30 min, no code          ~1-2 days, code
+  Cost                               Free (MEE6 free tier)     Free + ~$5/mo host
+  True single-use per buyer          NO (shared gate)*         YES (DB-backed)
+  Code bound to one Discord user     NO                        YES
+  Auto-revoke role on refund/cb      NO (manual kick)          YES (automatic)
+  Ties Discord id back to your app   NO                        YES
+  Best for                           v0 / first small cohort   real launch+scale
+  * MEE6/Carl-bot "verification" is ONE shared gate for the whole server
+    (a reaction, button, captcha, or single pass phrase), not a unique
+    per-purchase code. See the workaround in Option A below.
+
+  -------------------------------------------------------------------------
+  OPTION A — MEE6 / CARL-BOT (no-code, fast v0)
+  -------------------------------------------------------------------------
+  How it actually works: MEE6/Carl-bot grant a role when a user passes ONE
+  server-wide gate. They do NOT know about your individual buyers, so they
+  cannot enforce a unique code per person on their own. Two ways to run it:
+
+  A1) Reaction / button gate (simplest, least secure):
+      - @everyone sees only #welcome + #verify.
+      - In #verify, a MEE6/Carl-bot "reaction role" or "verify button" grants
+        the Member role on click.
+      - The paywall is the INVITE LINK itself: deliver the private server invite
+        only inside the paid PDF + confirmation email. "You only get the link
+        if you paid."
+      - Weakness: the invite can be reshared. Mitigate with an expiring /
+        max-uses invite rotated each cohort. Leaky -> first small cohort only.
+
+  A2) Shared-passphrase gate (Carl-bot, a bit better):
+      - Carl-bot requires a specific phrase typed in #verify before granting the
+        role. Put that phrase in the paid PDF/email (e.g. "GLOWJAN27").
+      - One phrase per cohort, rotated each launch. Still shareable, but the gate
+        is a secret rather than just a click.
+
+  SETUP (A2):
+      1. Invite MEE6 or Carl-bot to the server.
+      2. Set @everyone to see only #welcome + #verify; create a "Member" role
+         that unlocks all other channels.
+      3. Configure the bot's verification/auto-role to require the passphrase in
+         #verify and grant Member on success.
+      4. Put the passphrase in the PDF + confirmation email; rotate per cohort.
+      REVOCATION here is MANUAL: to remove someone, kick them or strip the role
+      by hand. Fine at low volume; painful at scale -> that's why Option B exists.
+
+  When Option A is fine: your very first cohort, low volume, you want to launch
+  this week with no code. Plan to migrate to Option B before you scale.
+
+  -------------------------------------------------------------------------
+  OPTION B — CUSTOM discord.js BOT (recommended for real launch)
+  -------------------------------------------------------------------------
+  Why custom: only a custom bot can check a code against YOUR database, mark it
+  redeemed, bind it to the Discord user id, revoke roles on refund, and link the
+  Discord account back to the app user. This is true single-use gating and what
+  the access_codes table in Section 3 is designed for.
+
+  Bot command:  /verify code:<XXXX-XXXX>
+    1. Bot calls your API:  POST /api/discord/redeem { code, discord_user_id }
+       (request signed with DISCORD_SHARED_SECRET so only the bot can call it).
+    2. API checks access_codes: exists? not redeemed? not expired?
+         - invalid/used/expired -> bot replies privately with the reason.
+         - valid -> set redeemed=true, redeemed_by_did, redeemed_at;
+                    set users.discord_user_id; return success.
+    3. Bot assigns the "Member" role to that user. Code is now dead forever.
+
+  REVOCATION: on refund/chargeback/sub-cancel, your backend calls the Discord
+  API (bot token) to remove the Member role from users.discord_user_id —
+  automatic, no manual kicking.
+
+  HOSTING: a gateway bot needs a persistent connection -> host on Railway/Fly.io
+  (~$5/mo). Or use Discord HTTP Interactions (slash-command webhook) and run it
+  serverless on Vercel with no always-on process.
+
+  -------------------------------------------------------------------------
+  RECOMMENDATION
+  -------------------------------------------------------------------------
+  Ship v0 on Option A (A2 shared passphrase) if you must launch immediately;
+  build Option B (custom bot) for the first real cohort and keep it forever.
+  The rest of this document (access_codes table, /api/discord/redeem, refund
+  revocation) assumes Option B, which is the design you want to land on.
+
+6.3 ABUSE PROTECTION
+  - One code -> one redemption -> bound to one Discord id. Sharing is useless:
+    the first person to use it burns it.
+  - Codes expire (e.g. 30 days) so leaked-but-unused codes die.
+  - Rate-limit /verify per Discord id to stop brute forcing.
+  - Codes are random 8 chars from a non-ambiguous alphabet (no 0/O, 1/I).
+
+6.4 ENV: DISCORD_BOT_TOKEN, DISCORD_GUILD_ID, DISCORD_MEMBER_ROLE_ID,
+         DISCORD_SHARED_SECRET
+
+
+===============================================================================
+ 7. THE COMPLETE PURCHASE -> ACCESS FLOW (step by step, ~60 seconds)
+===============================================================================
+
+  1. Buyer taps "Join the January cohort" on the sales page.
+  2. POST /api/checkout -> Stripe Checkout Session -> redirect to Stripe.
+  3. Buyer pays (Apple Pay / card) on Stripe-hosted page.
+  4. Stripe fires checkout.session.completed -> /api/webhooks/stripe.
+  5. Webhook (idempotent) does, in one transaction:
+        a. upsert user (by email)
+        b. create enrollment (status=active, linked to cohort)
+        c. generate single-use access_code (expires in 30d)
+        d. enqueue confirmation email
+  6. Email (Resend) sends: receipt + magic-link login + the access code + PDF.
+  7. Stripe redirects browser to /welcome?session_id=...
+        - page confirms purchase, shows the access code on screen,
+          and a "one-tap login" magic-link button.
+  8. Buyer clicks magic link -> authenticated -> /dashboard.
+  9. First-run: intake quiz -> picks habit anchor -> saved to users.
+ 10. Buyer opens Discord, goes to #verify, runs /verify code:GLW-7QK4.
+ 11. Bot validates via /api/discord/redeem -> grants Member role -> burns code.
+ 12. Buyer now has: branded dashboard (app) + full private community (Discord).
+     Until the cohort start_date, both show the pre-cohort/countdown state.
+
+  FAILURE HANDLING:
+   - Email not received -> /welcome page can re-send + always displays the code.
+   - Lost code -> "Resend my access code" button in dashboard (regenerates if
+     still unredeemed; shows existing if not).
+   - Paid but no account -> webhook is the only provisioner; a reconcile job
+     re-checks Stripe for any session_id missing an enrollment (safety net).
+
+
+===============================================================================
+ 8. THE WEB APP ITSELF (member-facing features to build)
+===============================================================================
+
+  ROUTES
+    /                      marketing / sales page (public)
+    /join                  pricing + Stripe Checkout entry
+    /welcome               post-purchase confirmation + code + magic link
+    /login                 magic link + Google OAuth
+    /dashboard             today's 4 tasks, streak, progress (auth + access)
+    /dashboard/day/[n]     a single day's check-in form
+    /dashboard/progress    journey map, habit-anchor completion, badges
+    /leaderboard           live consistency ranking for the active cohort
+    /account               billing portal link, notifications, sign out
+    /api/*                 checkout, portal, webhooks/stripe, discord/redeem,
+                           checkins, push/subscribe
+
+  CORE DAILY LOOP (the product)
+    - Branded dashboard: today's movement/skin/mindset/anchor tasks + 1 tap each.
+    - Check-in: 4 checkboxes + movement log + mindset answer + reflection +
+      photo upload (private). Writes one check_ins row (UNIQUE per day).
+    - Streak counter: derived from consecutive completed days; habit-anchor
+      streak tracked separately. The primary engagement variable.
+    - Progress: 30-day bar, % per pillar, journey map.
+    - Leaderboard: aggregate check_ins per enrollment, ranked; honor-based.
+    - Day-8 state: dashboard shows the "this is the hard day, here's why you've
+      got this" encouragement module (the designed crisis point).
+    - Push: daily reminder + streak-protection + Day-8 nudge (Web Push/OneSignal).
+
+  ACCESS GATING (middleware)
+    - /dashboard/* requires: valid session AND (active enrollment in the current
+      cohort OR active subscription). Otherwise redirect to /join.
+    - This is the same check the Discord role mirrors. App = source of truth.
+
+
+===============================================================================
+ 9. SECURITY & COMPLIANCE
+===============================================================================
+
+  - PCI: never handled by you — Stripe hosts all card entry.
+  - Webhooks: always verify Stripe signature; reject unsigned. Verify the bot's
+    shared-secret/HMAC on /api/discord/redeem.
+  - RLS everywhere: users can only ever read/write their own rows. access_codes
+    only writable by the service role.
+  - Photos: private bucket, signed URLs, owner-scoped. Public sharing is opt-in
+    and consent is recorded (important — audience includes 16-year-olds).
+  - Minors: age floor in TOS consistent with platform rules; collect the minimum
+    data the product needs; clear privacy policy.
+  - Secrets: only in Vercel/Supabase env vars, never in the repo. Separate
+    test vs live Stripe keys.
+  - Rate limiting on /api/checkout, /api/discord/redeem, magic-link requests.
+  - Backups: Supabase daily backups; export check_ins regularly (it's the moat).
+
+
+===============================================================================
+ 10. HOSTING, SCALE & COST
+===============================================================================
+
+  ARCHITECTURE IS SERVERLESS + MANAGED (nothing to babysit):
+    Vercel (app + functions) + Supabase (db/auth/storage) + Stripe + Resend +
+    Discord bot (host the bot on Railway/Fly.io/a small always-on worker, since
+    a gateway bot needs a persistent connection — ~$5/mo, or a serverless
+    interactions endpoint if using HTTP interactions only).
+
+  SCALE PATH:
+    100-1,000 users     : all free tiers; founder solo.
+    1k-10k users        : Vercel Pro (~$20) + Supabase Pro (~$25); add a
+                          part-time mod; nothing re-architected.
+    10k-100k users      : Postgres read replicas, CDN caching, materialized
+                          leaderboard aggregates on a schedule, cost-tiered
+                          photo storage. Horizontal scale = a billing event.
+
+  EST. MONTHLY COST:
+    Phase 0 (pre-launch / first cohort)   ~ $0-15/mo  (+ Stripe % per sale)
+    Growing (multi-thousand members)      ~ $50-150/mo
+    Stripe fee                            ~ 2.9% + $0.30 per transaction
+                                            (this is your ~7% "platform fee"
+                                             line once blended with refunds etc.)
+
+
+===============================================================================
+ 11. EDGE CASES & POLICIES (decide these before launch)
+===============================================================================
+
+  - Refund within X days: revoke enrollment, remove Discord role, void unused
+    code. Pick a window (e.g. 7 days, no questions) and automate it.
+  - Chargeback: auto-revoke access + Discord role on charge.dispute.created.
+  - Failed subscription payment: dunning emails via Stripe; grace period; remove
+    Member role only after final failure + period end.
+  - Cohort already started: late buyers either join the live cohort mid-stream
+    OR are auto-enrolled into the next cohort (recommend: enroll in next, since
+    the synchronized start is the product). Make this explicit at checkout.
+  - Duplicate purchase: detect existing active enrollment; show "you're already
+    in" instead of charging twice.
+  - Code lost/never redeemed: resend from dashboard; expired code can be
+    regenerated for an active enrollment.
+  - Account/email mismatch: buyer paid with a different email than they log in
+    with -> reconcile by Stripe customer id; support override tool for you.
+
+
+===============================================================================
+ 12. BUILD TIMELINE (phased, ~2-4 weeks to MVP)
+===============================================================================
+
+  PHASE 1 — FOUNDATION (Week 1)
+    - Next.js + TypeScript + Tailwind scaffold; brand design system.
+    - Supabase project; schema migrated; RLS policies; storage bucket.
+    - Supabase Auth (magic link + Google). Login + protected route middleware.
+    DELIVERABLE: a user can sign in and hit an empty gated dashboard.
+
+  PHASE 2 — CORE PRODUCT LOOP (Week 2)
+    - Dashboard with today's 4 tasks from challenge_days.
+    - Day check-in form (4 pillars + logs + reflection + private photo upload).
+    - Intake quiz -> habit anchor. challenge_days content seeded (Days 1-30).
+    DELIVERABLE: a member can complete a day end-to-end.
+
+  PHASE 3 — ENGAGEMENT (Week 3)
+    - Streak counter, progress visualization, badges.
+    - Live leaderboard (aggregate query).
+    - Push notifications (Web Push/OneSignal) incl. Day-8 nudge + Day-8 module.
+    DELIVERABLE: the app feels alive and motivating.
+
+  PHASE 4 — COMMERCE + ACCESS (Week 4)
+    - Stripe Products/Prices; /api/checkout; /welcome; Customer Portal.
+    - /api/webhooks/stripe with full idempotent provisioning.
+    - access_codes generation + confirmation email (Resend).
+    - Discord server built; custom verify bot + /api/discord/redeem; role grant;
+      refund/chargeback role revocation.
+    - FULL TEST PURCHASE in Stripe test mode end-to-end, then one live $1 test.
+    DELIVERABLE: pay -> account -> code -> Discord, fully automated. SHIP.
+
+  PHASE 5 — POLISH / PRE-COHORT (buffer)
+    - Sentry + PostHog wired. Reconcile/safety-net job. Dunning emails.
+    - Pre-cohort/countdown dashboard state. Sales page testimonials.
+    - Load-sanity check; mobile QA in the TikTok in-app browser specifically.
+
+
+===============================================================================
+ 13. FUTURE / PLATFORM (don't build now, but design toward it)
+===============================================================================
+
+  - Multi-challenge: challenge_type already generalizes; adding Detox + future
+    challenges is content + a cohort row, not new architecture.
+  - Premium app tier ($25): same app, a premium-flag on enrollment.
+  - Creator platform (endgame): let outside creators host challenges on the same
+    infra for a revenue share. Keep challenge content and cohorts as data, keep
+    auth/billing/access generic, and this becomes a config + payout problem,
+    not a rebuild. Design the schema (as above) so a "creator_id" can later hang
+    off cohorts/challenge_days without migration pain.
+
+
+===============================================================================
+ 14. ENVIRONMENT VARIABLES CHECKLIST
+===============================================================================
+
+  *** SECRETS REMOVED FROM THIS FILE. ***
+  Live values live in .env.local (git-ignored) and in your host's env settings
+  (Vercel / Supabase / Railway). This is the CHECKLIST ONLY — never paste real
+  secrets back into this file (it gets committed to GitHub). Mirrors .env.example.
+
+  # Supabase
+  SUPABASE_DB_PASSWORD=            # in .env.local  (rotate if exposed)
+  NEXT_PUBLIC_SUPABASE_URL=
+  NEXT_PUBLIC_SUPABASE_ANON_KEY=   # public / client-safe
+  SUPABASE_SERVICE_ROLE_KEY=       # SERVER ONLY, never client
+  # Stripe
+  STRIPE_SECRET_KEY=               # sk_test_... while building, sk_live_... in prod
+  STRIPE_PUBLISHABLE_KEY=          # pk_test_... while building, pk_live_... in prod
+  STRIPE_WEBHOOK_SECRET=           # created in Phase 4 (whsec_...) / Stripe CLI locally
+  # Email
+  RESEND_API_KEY=
+  # Discord
+  DISCORD_BOT_TOKEN=
+  DISCORD_GUILD_ID=
+  DISCORD_MEMBER_ROLE_ID=
+  DISCORD_SHARED_SECRET=           # signs bot <-> api calls
+  # Push / analytics / monitoring
+  ONESIGNAL_APP_ID=
+  ONESIGNAL_API_KEY=               # SERVER ONLY
+  NEXT_PUBLIC_POSTHOG_KEY=         # public / client-safe
+  SENTRY_DSN=                      # public / client-safe
+  # App
+  NEXT_PUBLIC_APP_URL=             # http://localhost:3000 in dev; domain near launch
+
+
+===============================================================================
+ SUMMARY
+===============================================================================
+  - Payments: STRIPE (Checkout + Billing + Webhooks + Portal). Not Shopify.
+  - The web app is the source of truth for "who paid"; Discord is unlocked by a
+    single-use, expiring, non-shareable code validated by a custom bot.
+  - Pay in-app -> webhook auto-provisions account + enrollment + code + email ->
+    magic-link login -> dashboard -> /verify in Discord -> Member role -> done.
+  - Stack: Next.js + Supabase + Stripe + Resend + Discord bot, all serverless,
+    ~$0 to start, ~$50-150/mo at scale, >90% margin.
+  - Buildable to a shippable MVP in ~2-4 weeks across 4 phases; designed from
+    day one to extend into the multi-challenge creator platform.
+===============================================================================

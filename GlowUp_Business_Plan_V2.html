@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE GLOW ROOM — Interactive Business Plan (v2)</title>
+<style>
+:root{
+  --plum:#123F39; --rose:#E2785A; --roseLt:#FBE7DF; --ameth:#2C7A70;
+  --amethLt:#DCEDEA; --gold:#E0A23C; --goldLt:#F8EDD6; --sage:#6CA77F; --sageLt:#E4F0E7;
+  --ink:#22302C; --muted:#6E726B; --line:#E3DDD0; --paper:#FBF8F1;
+  --green:#2E7D5B; --red:#C0563F; --panelW:340px;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink);background:#e9e4df;line-height:1.55;font-size:15px;}
+
+/* ---------- Control panel (sliders) ---------- */
+#panel{position:fixed;top:0;left:0;width:var(--panelW);height:100vh;overflow-y:auto;
+  background:linear-gradient(170deg,#15534B,#0E3631);color:#fff;padding:18px 16px 60px;z-index:50;
+  box-shadow:2px 0 16px rgba(0,0,0,.28);}
+#panel h2{font-size:15px;margin:0 0 2px;letter-spacing:.6px;font-weight:700;}
+#panel .sub{font-size:11px;color:#cfe3dd;margin:0 0 14px;}
+.kpiGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.kpi{background:rgba(255,255,255,.08);border-radius:10px;padding:9px 11px;border-left:3px solid var(--rose);}
+.kpi .v{font-size:18px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;}
+.kpi .l{font-size:9px;color:#bcd6cf;margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+.kpi.g{border-left-color:var(--gold);} .kpi.a{border-left-color:#5BB0A3;}
+.kpi.s{border-left-color:var(--sage);}
+.scen{font-size:11px;text-align:center;padding:6px;border-radius:8px;margin-bottom:8px;
+  font-weight:700;letter-spacing:.5px;background:rgba(255,255,255,.1);}
+.grp{margin:15px 0 6px;font-size:10.5px;font-weight:700;color:var(--gold);
+  text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.16);padding-bottom:4px;}
+.sl{margin:11px 0;}
+.sl .row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;margin-bottom:3px;}
+.sl .row .lab{color:#e6f1ec;}
+.sl .row .out{font-weight:700;color:#fff;background:rgba(255,255,255,.13);
+  padding:1px 7px;border-radius:6px;font-variant-numeric:tabular-nums;}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;
+  background:rgba(255,255,255,.25);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--gold);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--gold);
+  cursor:pointer;border:2px solid #fff;}
+#reset{margin-top:16px;width:100%;padding:9px;border:1px solid rgba(255,255,255,.4);
+  background:transparent;color:#fff;border-radius:8px;font-size:12px;cursor:pointer;}
+#reset:hover{background:rgba(255,255,255,.13);}
+.panelNote{font-size:10px;color:#aecbc3;margin-top:14px;line-height:1.45;}
+
+/* ---------- Main content ---------- */
+#doc{margin-left:var(--panelW);padding:0;}
+.page{max-width:880px;margin:24px auto;background:#fff;padding:54px 64px;
+  box-shadow:0 2px 16px rgba(60,30,45,.13);border-radius:3px;}
+.cover{background:linear-gradient(165deg,#15534B,#0E3631);color:#fff;padding:74px 64px;border-radius:3px;
+  max-width:880px;margin:24px auto;}
+.cover .conf{font-weight:700;letter-spacing:2px;font-size:12px;color:#cfe6df;}
+.bands{height:10px;margin:34px 0;border-radius:3px;overflow:hidden;display:flex;}
+.bands i{flex:1;} .bands .b1{background:var(--rose);} .bands .b2{background:var(--sage);} .bands .b3{background:var(--gold);}
+.cover h1{font-size:74px;margin:14px 0 0;letter-spacing:-1px;line-height:.95;font-weight:800;}
+.cover .tag{font-size:19px;color:var(--roseLt);margin:8px 0 30px;letter-spacing:.5px;}
+.cover .lead2{font-size:16px;color:#e3efe9;max-width:580px;line-height:1.6;}
+.cover .meta{display:flex;justify-content:space-between;margin-top:50px;border-top:1px solid #3a6e64;padding-top:18px;font-size:13px;}
+.cover .meta b{color:#fff;} .cover .meta span{color:#bcd6cf;}
+
+h1.sec{font-size:25px;color:#fff;background:var(--plum);margin:0 -64px 22px;
+  padding:15px 24px;border-left:6px solid var(--rose);letter-spacing:.2px;}
+.page:nth-of-type(even) h1.sec{border-left-color:var(--sage);}
+.page:nth-of-type(3n) h1.sec{border-left-color:var(--gold);}
+h2{font-size:16.5px;color:var(--ameth);margin:24px 0 6px;}
+h3{font-size:13.5px;color:var(--ink);margin:15px 0 4px;text-transform:uppercase;letter-spacing:.6px;}
+p{margin:8px 0;text-align:justify;}
+.lead{font-style:italic;color:var(--ameth);font-size:16.5px;text-align:left;margin:6px 0 14px;line-height:1.5;}
+ul,ol{margin:8px 0 8px 4px;padding-left:20px;} li{margin:4px 0;}
+em{color:var(--plum);font-style:italic;} strong{color:var(--plum);}
+a.toclink{color:var(--plum);text-decoration:none;}
+a.toclink:hover{text-decoration:underline;}
+
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:12.5px;}
+th{background:var(--plum);color:#fff;text-align:left;padding:7px 9px;font-weight:600;font-size:11.5px;}
+td{padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top;}
+tr:nth-child(even) td{background:var(--paper);}
+table.fin td.num,table.fin th.num{text-align:right;font-variant-numeric:tabular-nums;}
+tr.total td{background:var(--plum)!important;color:#fff;font-weight:700;}
+tr.hl td{background:var(--roseLt)!important;font-weight:700;}
+tr.hlg td{background:var(--goldLt)!important;font-weight:700;}
+.dyn{color:var(--plum);font-weight:700;background:#DCEDEA;padding:0 4px;border-radius:3px;
+  font-variant-numeric:tabular-nums;}
+
+.toc ol{list-style:none;padding:0;counter-reset:s;}
+.toc>ol>li{counter-increment:s;font-weight:700;color:var(--plum);font-size:15px;margin:9px 0 2px;}
+.toc>ol>li::before{content:counter(s) ".  ";color:var(--rose);}
+
+.callout{background:var(--amethLt);border-left:4px solid var(--ameth);padding:12px 16px;border-radius:5px;margin:16px 0;font-size:14px;}
+.callout.gold{background:var(--goldLt);border-left-color:var(--gold);}
+.callout.rose{background:var(--roseLt);border-left-color:var(--rose);}
+.callout.sage{background:var(--sageLt);border-left-color:var(--sage);}
+.callout b{color:var(--plum);}
+
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0;}
+.cards.three{grid-template-columns:repeat(3,1fr);}
+.card{background:var(--roseLt);border-radius:10px;padding:13px 10px;text-align:center;border-top:3px solid var(--rose);}
+.card .v{font-size:22px;font-weight:700;color:var(--plum);font-variant-numeric:tabular-nums;line-height:1.1;}
+.card .l{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.3;}
+.card.a{background:var(--amethLt);border-top-color:var(--ameth);}
+.card.g{background:var(--goldLt);border-top-color:var(--gold);}
+.card.s{background:var(--sageLt);border-top-color:var(--sage);}
+
+.swatches{display:flex;gap:6px;margin:12px 0;}
+.swatch{flex:1;height:54px;border-radius:6px;display:flex;align-items:flex-end;padding:6px;font-size:9.5px;font-weight:700;color:#fff;}
+.pillargrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:14px 0;}
+.pillar{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper);}
+.pillar h4{margin:0 0 4px;color:var(--rose);font-size:14px;}
+.pillar p{margin:0;font-size:12.5px;text-align:left;color:var(--muted);}
+.assume{font-size:11px;color:var(--muted);background:var(--paper);border:1px dashed var(--line);
+  border-radius:8px;padding:10px 14px;margin:12px 0;display:none;}
+.footnote{font-size:11px;color:var(--muted);font-style:italic;margin-top:10px;}
+.hint{position:fixed;bottom:14px;left:calc(var(--panelW) + 18px);background:var(--gold);color:#fff;
+  font-size:12px;font-weight:600;padding:8px 14px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:40;}
+.daygrid td:first-child{font-weight:700;color:var(--plum);white-space:nowrap;}
+
+/* ---------- Print ---------- */
+@media print{
+  @page{size:letter;margin:13mm 13mm;}
+  body{background:#fff;font-size:10.3px;}
+  #panel,.hint,#reset{display:none!important;}
+  #doc{margin-left:0;}
+  .page,.cover{box-shadow:none;margin:0;max-width:100%;padding:0 4mm;border-radius:0;page-break-after:always;}
+  .cover{background:#123F39!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+    min-height:250mm;padding:40mm 12mm;}
+  .cover h1{font-size:60px;}
+  h1.sec{margin:0 0 14px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  th,tr.total td,tr.hl td,tr.hlg td,.callout,.card,.swatch,.kpi,.bands i,.pillar,
+  .dyn,.scen{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .assume{display:block;}
+  table,.callout,.cards,.pillargrid,.pillar{page-break-inside:avoid;}
+  h1.sec,h2{page-break-after:avoid;}
+}
+</style>
+</head>
+<body>
+
+<aside id="panel">
+  <h2>LIVE FINANCIAL MODEL</h2>
+  <p class="sub">Drag any slider — every figure across Sections 1, 7, 8 &amp; 11 updates instantly.</p>
+  <div class="scen" id="scenTag">BASE CASE</div>
+  <div class="kpiGrid">
+    <div class="kpi"><div class="v" id="kpi_rev">—</div><div class="l">Year 1 revenue</div></div>
+    <div class="kpi a"><div class="v" id="kpi_ebitda">—</div><div class="l">Year 1 EBITDA</div></div>
+    <div class="kpi g"><div class="v" id="kpi_margin">—</div><div class="l">EBITDA margin</div></div>
+    <div class="kpi s"><div class="v" id="kpi_mrr">—</div><div class="l">Exit MRR (membership)</div></div>
+  </div>
+  <div id="sliders"></div>
+  <button id="reset">↺ Reset to base case</button>
+  <p class="panelNote">Interactive on screen only. When you Print → Save as PDF, the panel is hidden
+  and the current assumptions print alongside the numbers (see the dashed boxes).</p>
+</aside>
+
+<div class="hint">⟵ Drag the sliders to explore the model</div>
+
+<div id="doc">
+
+<!-- ============ COVER ============ -->
+<section class="cover">
+  <div class="conf">CONFIDENTIAL · BUSINESS PLAN &amp; INVESTMENT MEMORANDUM · v2 (INTERACTIVE)</div>
+  <div class="bands"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+  <h1>THE GLOW ROOM</h1>
+  <div class="tag">a Gen Z digital wellness platform</div>
+  <div class="lead2">Structured self-improvement challenges that sell transformation, not content —
+  launching with the 30-Day Glow Up Challenge ($18) and the 7-Day Phone Detox Challenge ($12),
+  delivered through a fully branded custom web app, a gated Discord community, and a cohort model
+  that runs four times a year. Built to become a recurring-revenue wellness platform.</div>
+  <div class="meta">
+    <div><b>Lead product</b> · 30-Day Glow Up · $18<br><b>Channel</b> · TikTok-first + owned web app<br><b>Model</b> · Land on a cohort, retain on $9/mo membership</div>
+    <div style="text-align:right"><span>Seeking: pre-seed / accelerator</span><br><span>Target raise: $50,000 (optional accelerant)</span><br><span>Prepared: June 2026</span></div>
+  </div>
+</section>
+
+<!-- ============ TOC ============ -->
+<section class="page">
+  <h1 class="sec">Table of Contents</h1>
+  <div class="toc"><ol>
+    <li><a class="toclink" href="#s1">Executive Summary <span style="color:var(--gold)">◆ live</span></a></li>
+    <li><a class="toclink" href="#s2">The Problem &amp; The Opportunity</a></li>
+    <li><a class="toclink" href="#s3">The Solution</a></li>
+    <li><a class="toclink" href="#s4">Product Architecture</a></li>
+    <li><a class="toclink" href="#s5">Technology Infrastructure</a></li>
+    <li><a class="toclink" href="#s6">Market Analysis</a></li>
+    <li><a class="toclink" href="#s7">Business Model &amp; Unit Economics <span style="color:var(--gold)">◆ live</span></a></li>
+    <li><a class="toclink" href="#s8">Revenue Streams <span style="color:var(--gold)">◆ live</span></a></li>
+    <li><a class="toclink" href="#s9">Go-To-Market Strategy</a></li>
+    <li><a class="toclink" href="#s10">Community &amp; Retention Strategy</a></li>
+    <li><a class="toclink" href="#s11">Financial Model <span style="color:var(--gold)">◆ live</span></a></li>
+    <li><a class="toclink" href="#s12">Founding Team</a></li>
+    <li><a class="toclink" href="#s13">Risks &amp; Mitigations</a></li>
+    <li><a class="toclink" href="#s14">90-Day Launch Roadmap</a></li>
+    <li><a class="toclink" href="#s15">Appendix</a></li>
+  </ol></div>
+  <div class="callout gold"><b>New in v2:</b> Sections 1, 7, 8 and 11 are driven by the live model in
+  the left panel. Change the challenge price, platform fee, cohort size, growth rate, membership
+  conversion, churn, ad spend or any other lever and the unit economics, revenue mix, month-by-month
+  P&amp;L and 3-year projection all recompute in real time. The default state matches the written base case.</div>
+</section>
+
+<!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+<section class="page" id="s1">
+  <h1 class="sec">1. Executive Summary</h1>
+  <p class="lead">The Glow Room sells structured transformation, not content. An entire generation is
+  drowning in free self-improvement inspiration and starving for execution infrastructure — we close
+  that gap with cohort-based, time-bound challenges delivered through a fully branded web app and a
+  gated community.</p>
+
+  <div class="cards">
+    <div class="card"><div class="v" id="es_price">$18</div><div class="l">Glow Up price</div></div>
+    <div class="card a"><div class="v" id="es_cm">93%</div><div class="l">Contribution margin</div></div>
+    <div class="card g"><div class="v" id="es_rev">$160K</div><div class="l">Year 1 revenue (model)</div></div>
+    <div class="card s"><div class="v" id="es_mrr">$2.5K</div><div class="l">Exit MRR (membership)</div></div>
+  </div>
+
+  <h2>The problem</h2>
+  <p>Gen Z is the most anxious, least structured, and most self-improvement-curious generation in
+  modern history, and the market serves them almost exclusively with <em>inspiration</em>. A TikTok
+  transformation video produces roughly four minutes of motivation and zero behavioral change because
+  there is no system underneath it — no daily instruction, no accountability, and no community moving
+  in lockstep. The blank journal sits on the shelf. The gap between feeling motivated and executing
+  daily is the single largest unmet need in consumer wellness for people aged 16–24, and no free
+  product structurally solves it.</p>
+
+  <h2>The solution</h2>
+  <p>We sell a 30-day structured transformation experience organised around four pillars — movement,
+  skin, mindset, and a single daily habit anchor — in which every day for 30 days the buyer wakes up
+  already knowing exactly what to do. The product removes decision fatigue entirely: the system does
+  the thinking and the member simply executes. Critically, every member of a cohort starts on the
+  <em>same fixed calendar date</em>, which manufactures two things free products cannot replicate at
+  once — genuine community (200 people posting in the "Day 8" channel on the day you are doing Day 8)
+  and genuine urgency (miss the January cohort and you wait until April). This is closer in spirit to
+  Coachella or SoulCycle than to a Gumroad PDF shop.</p>
+
+  <div class="callout rose"><b>The strategic wedge:</b> the founder can build software, so we deliver a
+  fully branded web app instead of renting Notion. The member opens <em>our</em> product every day,
+  sees <em>our</em> brand, and we capture exactly who drops off, when, and on which pillar — compounding
+  brand equity plus a behavioral dataset no PDF competitor can clone.</p>
+
+  <h2>The business model</h2>
+  <p>We run four cohorts a year — January 1 (flagship New Year reset), April 1, July 1, October 1 —
+  each with a pre-launch waitlist window that converts anticipation into pre-sales and algorithm
+  momentum. Revenue compounds across four layers: one-time cohort sales at <span class="dyn" id="es_gp">$18</span>;
+  a recurring <span class="dyn" id="es_sp">$9</span>/month membership (<em>The Glow Room Monthly</em>)
+  that provides stable, high-margin recurring revenue; low-effort expansion packs at $7–$12; and a
+  backlog of additional challenges beginning with Phone Detox. Gross margin exceeds 90% because cost of
+  goods after the initial build is effectively zero — no inventory, no shipping, no fulfilment.</p>
+
+  <h2>The numbers</h2>
+  <p>On the base-case assumptions in the live panel, Year 1 revenue is <span class="dyn" id="es_rev2">$32K</span>
+  at an EBITDA of <span class="dyn" id="es_ebitda">$17K</span> and a margin of
+  <span class="dyn" id="es_margin">54%</span>, exiting the year at an embedded monthly recurring
+  revenue of <span class="dyn" id="es_mrr2">$1.3K</span> from membership alone — with margin above 90%
+  before fixed marketing and overhead. A realistic first cohort of 100 sales nets ~$1,674; by cohort
+  three or four, 500 sales nets ~$8,370 in a single 30-day cycle. As cohorts compound, a strong Year-1
+  outcome with consistent posting reaches $40,000–$80,000, and an optimistic scenario with one or two
+  viral moments reaches $150,000–$200,000 — both reachable by raising the cohort and conversion sliders.</p>
+
+  <div class="assume">Printed snapshot — base case: Glow Up $18, fee 7%, Cohort 1 = 100 buyers, growth 50%/cohort,
+  membership $9/mo, conversion 13%, churn 8%/mo. Drag the sliders in the live HTML to change any of these.</div>
+
+  <h2>The ask</h2>
+  <p>The business is capital-efficient by construction and can launch on founder labour alone. We are
+  nonetheless raising an optional <strong>$50,000 pre-seed</strong> to compress the timeline: to fund
+  paid Spark Ads amplification of proven organic creator content, to underwrite a part-time moderator
+  and a brand designer ahead of the flagship January cohort, and to extend the web app from a
+  single-challenge MVP into the multi-challenge, badge-collecting platform that supports outside
+  creators in Year Two. The capital is an accelerant, not a dependency — precisely the risk profile a
+  seed investor should want.</p>
+</section>
+
+<!-- ============ 2. PROBLEM ============ -->
+<section class="page" id="s2">
+  <h1 class="sec">2. The Problem &amp; The Opportunity</h1>
+  <p class="lead">The wellness market sells Gen Z inspiration when what they measurably need is
+  execution infrastructure — and the cohort model is the only mechanism that has reliably solved the
+  accountability problem at consumer price points.</p>
+
+  <h2>The most anxious, least structured generation in modern history</h2>
+  <p>Gen Z came of age entirely inside the algorithmic feed, and the defining feature of their media
+  environment is infinite inspiration with zero scaffolding. A 19-year-old can, in one evening, watch
+  forty transformation videos, save a dozen routines, and follow six wellness creators — and wake up
+  with no plan, no first step, and a slightly worse sense of inadequacy than before. The content did
+  not fail to inspire; it succeeded too well and then abandoned them at the exact moment execution was
+  supposed to begin. Motivation is not the bottleneck for this generation — it is abundant and free.
+  The bottleneck is the absence of a system that converts a fleeting motivated state into a repeatable
+  daily action before the motivation evaporates.</p>
+
+  <h2>Why free content structurally fails</h2>
+  <p>Free content and our product are not substitutes — they are sequential. Free content is the top of
+  the funnel that <em>creates</em> the desire our product then satisfies; the more glow-up content TikTok
+  produces, the larger our pool of motivated-but-stuck buyers becomes. Free content fails on three
+  structural dimensions no algorithm change can fix:</p>
+  <ul>
+    <li><b>No sequence</b> — a viewer sees a Day 30 result but has no idea what happened on Day 3, 11 or 22, so there is nothing to execute.</li>
+    <li><b>No accountability</b> — no one expects them to show up, and the cost of quitting is zero because no one notices.</li>
+    <li><b>No belonging</b> — they watch alone, and the loneliness that drove them to the content is left fully intact.</li>
+  </ul>
+  <p>Our product inverts all three: it supplies the exact daily sequence, manufactures accountability
+  through a synchronised cohort, and converts a solitary scroll into membership in a visible group
+  doing the identical thing on the identical day.</p>
+
+  <h2>Why the blank journal sits on the shelf</h2>
+  <p>The graveyard of self-improvement is full of tools that gave people capacity without direction —
+  the blank journal, the empty habit tracker, the gym membership opened twice. Each offloads the
+  hardest cognitive work, deciding what to do today, back onto the very person already overwhelmed.
+  Our mindset pillar never does this: on Day 7 it says "write down three things you have been avoiding
+  and why," on Day 12 "describe the version of yourself you want to be in 90 days as if it already
+  happened." The difference between a blank page and a specific prompt is the difference between a
+  product abandoned on Day 2 and one completed on Day 30.</p>
+
+  <h2>Why the cohort model cracks accountability</h2>
+  <p>No solo digital product has ever solved accountability, because accountability is inherently
+  social and a solo product is by definition asocial. A PDF cannot notice you skipped Day 8. The cohort
+  model finally makes accountability work at an $18 price point through synchronisation: because every
+  member starts on the same date and moves through the same 30 days together, the community generates
+  real-time social proof and social pressure as a natural by-product of its own activity. This is the
+  single most defensible feature of the model, and it is structural rather than something a competitor
+  can bolt on.</p>
+
+  <div class="callout sage"><b>Macro tailwinds converging:</b> the explosive growth of TikTok Shop and
+  creator-led commerce has made $10–$25 digital impulse buys frictionless for exactly our demographic;
+  Gen Z treats mental-health and wellness spending as non-discretionary; and mature no-code tooling lets
+  one technical founder ship a branded web app at near-zero marginal cost. We do not need a large share
+  of a trillion-dollar wellness economy — a few thousand recurring members is a rounding error that
+  produces the outcomes modelled in Section 11.</p>
+</section>
+
+<!-- ============ 3. SOLUTION ============ -->
+<section class="page" id="s3">
+  <h1 class="sec">3. The Solution</h1>
+  <p class="lead">We sell a recurring, cohort-based transformation experience; the PDF, the app and the
+  community are merely the container for the feeling of momentum, direction and belonging that the buyer
+  is actually purchasing.</p>
+
+  <h2>What we are actually selling</h2>
+  <p>We are not selling a PDF, a workout plan, or a skincare routine. We are selling a 30-day structured
+  transformation experience with four pillars, delivered as a designed daily guide, an interactive
+  branded tracker, and membership in a private community of people doing the exact same thing on the
+  exact same day. The physical deliverable is almost irrelevant. What the buyer pays for is the feeling
+  of being part of something, the relief of a clear path, and the safety of not being alone. The launch
+  price is a clean, confident <strong>$18</strong> — not $17.99 — low enough to be an impulse buy for a
+  19-year-old, high enough to signal the thing is real.</p>
+
+  <h2>The cohort model, precisely</h2>
+  <p>Everyone starts on the same fixed calendar date announced in advance — not whenever they buy. This
+  single decision is the strategic core of the business because a fixed start date simultaneously
+  manufactures the two assets a digital product is normally least able to produce: community and
+  urgency. We run four cohorts a year, each timed to a natural inflection in the consumer's emotional
+  calendar:</p>
+  <table class="fin">
+    <thead><tr><th>Cohort</th><th>Date</th><th>Emotional trigger</th></tr></thead>
+    <tbody>
+      <tr><td>New Year Reset <span style="color:var(--gold)">★ flagship</span></td><td>January 1</td><td>The most powerful self-improvement moment on the calendar</td></tr>
+      <tr><td>Spring</td><td>April 1</td><td>Warming weather; wanting to feel good before summer</td></tr>
+      <tr><td>Summer Reset</td><td>July 1</td><td>For those who "fell off" in H1 and want a clean restart</td></tr>
+      <tr><td>Autumn Reset</td><td>October 1</td><td>Back-to-school energy; finishing the year strong</td></tr>
+    </tbody>
+  </table>
+  <p>Between announcement and start sits a <em>waitlist window</em> — the engine, not dead air. Members
+  buy and wait; we post countdown content, prep guides and behind-the-scenes server setup; we introduce
+  waiting members in a pre-challenge channel so the community is buzzing before Day 1 exists. The fixed
+  date generates FOMO no discount can replicate: miss January and you wait until April, which is why the
+  two largest sales days of every launch are the final 48–72 hours before enrolment closes.</p>
+
+  <div class="callout"><b>Selling an experience, not a product.</b> The right comparables are not other
+  Gumroad sellers — they are Coachella and SoulCycle. Coachella sells a synchronised, time-bound
+  experience you can only have with other people on specific dates; SoulCycle sells a room of people
+  moving together, not a stationary bike. A buyer happily pays $18 for a structure they could assemble
+  for free, because what they are buying is not the structure — it is the company.</p>
+
+  <h2>Why the position is durable</h2>
+  <p>A competitor can copy our PDF in an afternoon and our task list in a weekend. What they cannot copy
+  is a living community of hundreds mid-cohort, the accumulated library of before-and-after proof, the
+  behavioral dataset that makes each successive cohort better-designed, and the brand equity of a member
+  opening our branded app every day for 30 days. The product is easy to clone; the experience and its
+  network are not.</p>
+</section>
+
+<!-- ============ 4. PRODUCT ARCHITECTURE ============ -->
+<section class="page" id="s4">
+  <h1 class="sec">4. Product Architecture</h1>
+  <p class="lead">Every component is designed to do one job: convert a motivated buyer into someone who
+  completes all 30 days and returns for the next cohort.</p>
+
+  <h2>The 30-Day Glow Up Challenge — four pillars</h2>
+  <p>Every single day assigns one specific, completable task in each pillar — not suggestions, because
+  the entire value proposition is the removal of decision-making from the member's day.</p>
+  <div class="pillargrid">
+    <div class="pillar"><h4>Movement</h4><p>Intentional activity, any form, 20 min minimum — never called a "workout plan," which would alienate non-gym-goers. Day 1 a walk, Day 8 a 5-exercise circuit, Day 15 a dance session. Variety keeps it accessible and keeps community content diverse.</p></div>
+    <div class="pillar"><h4>Skin</h4><p>One daily 1–2 step focus, introduced incrementally. Day 1 cleanser only, Day 4 SPF, Day 10 Vitamin C. By Day 30 a full routine built without overwhelm. The Day 1 vs Day 30 photo is the single most powerful marketing asset the challenge generates.</p></div>
+    <div class="pillar"><h4>Mindset</h4><p>A short, specific daily journaling prompt (5 min max) — never "write about your feelings." Each is engineered to produce a specific internal shift, and these entries perform exceptionally as self-improvement TikTok content.</p></div>
+    <div class="pillar"><h4>Habit Anchor</h4><p>One non-negotiable task identical every day for 30 days, chosen at intake (make the bed, 2L water, read 10 pages). The unchanging anchor is the neurological backbone that makes the three rotating pillars stick.</p></div>
+  </div>
+
+  <h2>The emotional arc &amp; the designed Day 8 crisis</h2>
+  <p>The 30 days are not emotionally flat; the product is designed around a known curve, and naming it
+  is itself a retention mechanism. Day 4 is easy. <strong>Day 8 is the designed crisis point</strong> —
+  the statistically predictable moment people quit. We address it head-on: the guide pre-warns the
+  member that Day 8 will feel like quitting (reframing "I am failing" into "I am exactly where the
+  program said I'd be"), the app surfaces an encouragement state, the "Day 8" channel is the most
+  active and supportive of the run, and seeded creators post "I almost quit" content. Day 15 is
+  engineered as a turning point timed to the first visible skin change; Day 22 feels inevitable; Day 30
+  is the transformation reveal. Fortifying Day 8 is the difference between a 30% and a 70% completion
+  rate — and completion rate is the lifeblood of both repurchase and marketing proof.</p>
+
+  <h2>The 7-Day Phone Detox Challenge</h2>
+  <p>The second product proves the model generalises. A tighter 7-day program at a lower entry price,
+  designed to stand alone and to funnel buyers into the flagship cohort. Each day assigns a single
+  escalating behavioral task (no-phone first hour, app deletions, grayscale, night-time distance). Its
+  signature mechanic is the <em>screen-time reveal</em>: members screenshot their daily average on Day 1
+  and again on Day 7, and the delta is intrinsically shareable proof — the Phone Detox equivalent of the
+  before-and-after photo. Its marketing angle is self-aware irony: advertised on the very platform it
+  asks members to use less ("I built a phone detox and I'm advertising it on TikTok, I know"). The design
+  follows established behavioral science — replace rather than remove, friction engineering, and a
+  complete winnable 7-day sprint rather than open-ended deprivation.</p>
+
+  <h2>The custom web application</h2>
+  <p>The owned experience layer and central strategic asset. Where competitors surrender their brand and
+  data to Notion, we deliver a fully branded app the member opens every day:</p>
+  <ul>
+    <li><b>Branded dashboard</b> — today's four tasks, current cohort day, progress at a glance, entirely in The Glow Room's identity.</li>
+    <li><b>Daily check-in system</b> — a checkbox per pillar plus fields to log movement, answer the prompt, write a reflection, and upload the day's photo.</li>
+    <li><b>Streak counter</b> — the primary engagement variable, with explicit habit-anchor streak handling.</li>
+    <li><b>Progress visualisation</b> — a 30-day progress bar, habit-anchor completion rate, and a visual journey map.</li>
+    <li><b>Leaderboard</b> — live consistency ranking; honor-based verification because the reward is recognition, not cash, so cheating incentive is near-zero.</li>
+    <li><b>Push notifications</b> — timed reminders, streak-protection nudges, and Day-8 encouragement.</li>
+    <li><b>User profiles</b> — stats, badges, streak history, and cross-challenge progression powering the badge-collector mechanic.</li>
+  </ul>
+  <p>Beyond engagement, the app is the data engine: because we own it, we know who our users are, which
+  days they drop off, which pillar they complete least, and when they check in — defensibility no
+  PDF-based competitor can match.</p>
+
+  <h2>The Discord community</h2>
+  <p>Named to feel like a destination — <em>The Glow Room</em>, not a support group bolted onto a
+  product. A <b>welcome</b> section (announcements + introductions that turn joining into arriving); a
+  <b>daily check-in</b> section of 30 channels (Day 1–Day 30) that fill in real time as the cohort
+  advances together — the beating heart where accountability becomes social; a <b>community</b> section
+  (before/after, accountability partners, wins, general chat); a <b>resource</b> section of zero-cost
+  gift-content drops; a <b>leaderboard</b> section with Glow Legend rewards for the top three; and a
+  private <b>moderator</b> section. Access is gated by a unique single-use code in the PDF and
+  confirmation email, redeemed once through a free verification bot (MEE6/Carl-bot) that grants the
+  member role then expires the code — the friction makes membership feel earned. Badges are collectible
+  <em>across challenge volumes</em>, turning the product line into a set and the customer into a
+  returning collector.</p>
+
+  <h2>The product expansion roadmap</h2>
+  <ul>
+    <li><b>Expansion packs ($7–$12)</b> — weekend-built add-ons sold passively forever (30 extra prompts $9, deeper skincare guide $12, movement pack $7).</li>
+    <li><b>Additional challenges</b> — from a ranked backlog beginning with Phone Detox, each sold to an audience already sold on structured self-improvement.</li>
+    <li><b>The Glow Room Monthly ($9/mo)</b> — access to all four cohorts, monthly drops, early access, members-only channel; at 2,000 subscribers, $18,000/month recurring.</li>
+    <li><b>Premium app tier ($25)</b> — the same challenge in a premium branded experience, a natural upgrade with a built-in price increase.</li>
+    <li><b>The platform</b> — opening to outside creators who host challenges on our infrastructure for a revenue share.</li>
+  </ul>
+</section>
+
+<!-- ============ 5. TECHNOLOGY ============ -->
+<section class="page" id="s5">
+  <h1 class="sec">5. Technology Infrastructure</h1>
+  <p class="lead">The guiding principle is capital efficiency without sacrificing the owned, branded,
+  data-generating experience that is the company's moat. A single technical founder can ship a
+  production MVP in weeks and scale it from 100 to 100,000 users without a re-platform.</p>
+
+  <h2>Recommended stack</h2>
+  <table class="fin">
+    <thead><tr><th>Layer</th><th>Recommendation</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>Next.js (React)</td><td>SSR for fast mobile first-paint; one codebase for web + PWA; trivial Vercel deploy.</td></tr>
+      <tr><td>Styling</td><td>Tailwind CSS</td><td>Pixel-precise brand control; consistent design system across every screen.</td></tr>
+      <tr><td>DB + Auth</td><td>Supabase (Postgres)</td><td>Managed Postgres, built-in auth, row-level security, photo storage; generous free tier.</td></tr>
+      <tr><td>Payments</td><td>Stripe (Gumroad/Stan fallback)</td><td>Webhook-driven access provisioning; marketplace fallback to ship the first cohort faster.</td></tr>
+      <tr><td>Email</td><td>Resend / Postmark</td><td>Transactional delivery of code + the cohort sequence; high deliverability.</td></tr>
+      <tr><td>Push</td><td>Web Push (PWA) + OneSignal</td><td>Daily reminders &amp; Day-8 encouragement without a native build.</td></tr>
+      <tr><td>Community</td><td>Discord + MEE6/Carl-bot</td><td>Free; where the audience already lives; code-gated entry.</td></tr>
+      <tr><td>Analytics</td><td>PostHog</td><td>Drop-off, pillar completion, check-in timing — the behavioral dataset = our defensibility.</td></tr>
+    </tbody>
+  </table>
+  <p>The entire stack runs on free or near-free tiers through the first several cohorts, keeping
+  infrastructure cost effectively at zero until paying volume justifies paid tiers — directly
+  underwriting the &gt;90% gross-margin thesis.</p>
+
+  <h2>Authentication &amp; data</h2>
+  <p>Authentication is passwordless by default — a buyer completes purchase, clicks a magic-link email,
+  and lands authenticated in their branded dashboard, with Google OAuth as a one-tap alternative.
+  Row-level security ensures each member reads and writes only their own check-ins, photos and profile;
+  the member's identity is the join key across challenges, which is what makes the cross-challenge
+  badge-collector mechanic possible. The core schema is intentionally simple — <code>users</code>,
+  <code>cohorts</code>, <code>enrollments</code>, <code>challenge_days</code>, <code>check_ins</code>
+  (the behavioral dataset), <code>badges</code> and single-use <code>access_codes</code> — and supports
+  every app feature without exotic infrastructure.</p>
+
+  <h2>Payment &amp; access flow (≈60 seconds)</h2>
+  <ol>
+    <li>Buyer completes Stripe Checkout (or Gumroad at first launch).</li>
+    <li>The payment webhook creates the user + enrolment and generates a unique single-use access code.</li>
+    <li>A transactional email delivers the branded PDF, the magic-link, and the Discord code.</li>
+    <li>Buyer clicks the link, lands in the dashboard, completes the intake quiz (habit anchor), and is placed in the upcoming cohort.</li>
+    <li>Buyer enters the code in the Discord bot, which validates once, grants the role, and expires the code.</li>
+  </ol>
+
+  <h2>Hosting, scale &amp; build timeline</h2>
+  <p>The architecture is serverless and managed end to end (Vercel + Supabase + APIs), with no servers
+  to maintain and effectively $0/month infrastructure cost through the first cohorts, rising to a modest
+  $50–$150/month only at multi-thousand-member scale. Growth from 100 to 100,000 users is a billing
+  event, not a re-architecture: paid tiers, read replicas, CDN caching, and scheduled materialised
+  aggregates for the leaderboard absorb load horizontally. The MVP is a four-phase, two-to-four-week
+  build — Foundation (auth + schema + design system), Core loop (dashboard + check-ins), Engagement
+  (streaks + leaderboard + push), and Commerce (Stripe + codes + Discord bot + end-to-end test) — after
+  which it runs four cohorts a year indefinitely.</p>
+</section>
+
+<!-- ============ 6. MARKET ============ -->
+<section class="page" id="s6">
+  <h1 class="sec">6. Market Analysis</h1>
+  <p class="lead">The opportunity is not that the market is empty; it is that the market is enormous and
+  the incumbents are all selling inspiration into a demand for execution.</p>
+
+  <h2>Sizing the opportunity</h2>
+  <div class="cards three">
+    <div class="card"><div class="v">TAM</div><div class="l">English-speaking Gen Z TikTok users with self-improvement intent — tens of millions</div></div>
+    <div class="card a"><div class="v">SAM</div><div class="l">Those who buy $10–$25 digital products via TikTok Shop / creator links — low millions</div></div>
+    <div class="card g"><div class="v">SOM</div><div class="l">Y1: a few hundred to ~2,000 cohort buyers + a few hundred members — a rounding error vs SAM</div></div>
+  </div>
+  <p>The global wellness economy is measured in the trillions; the digital self-improvement and
+  mental-wellness software segment alone is multi-billion-dollar and fast-growing, with Gen Z's share of
+  both spending and attention rising every year. The investment thesis does not require winning the
+  market — only capturing a vanishingly small slice, which Section 11 shows is sufficient for an
+  attractive return.</p>
+
+  <h2>Gen Z consumer behaviour</h2>
+  <p>Three behavioral facts underwrite the model: impulse digital purchasing is normalised (Gen Z buys
+  $10–$25 digital goods on impulse, triggered by creator proof, not research); self-improvement is
+  treated as non-discretionary spending rather than a luxury; and belonging is the premium they will pay
+  for. The impulse triggers we engineer against are scarcity (fixed cohort dates), social proof (creator
+  and member content), and identity ("something you choose because you are ready," never "something you
+  need because you are broken").</p>
+
+  <h2>Competitor matrix</h2>
+  <table class="fin">
+    <thead><tr><th>Competitor</th><th>What they offer</th><th>Where they fall short</th></tr></thead>
+    <tbody>
+      <tr><td>Free TikTok / YouTube</td><td>Infinite inspiration, free</td><td>No sequence, accountability or belonging — we monetise the desire it creates</td></tr>
+      <tr><td>Headspace / Calm</td><td>Polished meditation, subscription</td><td>Solo, single-modality, no cohort, no transformation arc</td></tr>
+      <tr><td>Noom</td><td>Psychology-based weight program</td><td>Expensive, weight-narrow, clinical, not Gen Z-native</td></tr>
+      <tr><td>Journaling apps</td><td>Blank / lightly-prompted journaling</td><td>The blank-page problem; no structure, no community</td></tr>
+      <tr><td>Gumroad PDF challenges</td><td>Static PDF challenges</td><td>No branded app, no live cohort, no data; brand disappears in Notion</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout"><b>Positioning &amp; defensibility.</b> On a map of <em>solo ↔ community</em> and
+  <em>inspiration ↔ structured execution</em>, every major competitor clusters in the solo quadrants.
+  The community / structured-execution quadrant — synchronised cohorts executing a specific daily plan
+  together at the Gen Z impulse price — is effectively empty. The Glow Room occupies it alone, and is
+  defensible not because the product is hard to copy but because the assets that accumulate there (a live
+  community, a proof library, a behavioral dataset, a daily-opened branded app) compound over time.</p>
+</section>
+
+<!-- ============ 7. BUSINESS MODEL & UNIT ECONOMICS ============ -->
+<section class="page" id="s7">
+  <h1 class="sec">7. Business Model &amp; Unit Economics</h1>
+  <p class="lead">Cost of goods after the initial build is effectively zero, platform fees are the only
+  meaningful per-sale cost, and gross margin therefore exceeds 90% on every product. Every figure below
+  is driven live by the panel.</p>
+
+  <h2>Per-sale waterfall — one Glow Up Challenge</h2>
+  <table class="fin">
+    <tbody>
+      <tr><td>Retail price</td><td class="num"><span class="dyn" id="ue_price">$18.00</span></td></tr>
+      <tr><td>Platform &amp; processing fee</td><td class="num"><span class="dyn" id="ue_fee">($1.26)</span></td></tr>
+      <tr><td>Affiliate commission (blended)</td><td class="num"><span class="dyn" id="ue_affil">($1.80)</span></td></tr>
+      <tr><td>Variable COGS (digital)</td><td class="num"><span class="dyn" id="ue_cogs">$0.00</span></td></tr>
+      <tr class="hl"><td><b>Contribution per sale</b></td><td class="num"><b><span class="dyn" id="ue_contrib">$14.94</span></b></td></tr>
+      <tr><td>Contribution margin</td><td class="num"><span class="dyn" id="ue_cm">83%</span></td></tr>
+    </tbody>
+  </table>
+  <p>With a CAC near zero (organic + seeded creators carry the acquisition load — see Section 9), payback
+  is effectively immediate: the first purchase recovers its own negligible acquisition cost within the
+  same transaction. Blended LTV compounds well beyond the first sale through cohort-2 repurchase, a
+  cross-sell into Phone Detox, and membership conversion — a conservative blended LTV of
+  <strong>$40–$70</strong> against a CAC near zero.</p>
+
+  <h2>Glow Up unit economics at scale</h2>
+  <p>At the current price and fee in the panel, a single 30-day cohort produces:</p>
+  <table class="fin">
+    <thead><tr><th>Units / cohort</th><th class="num">Gross</th><th class="num">Platform fee</th><th class="num">Net revenue</th><th class="num">Contribution</th></tr></thead>
+    <tbody id="ueBody"></tbody>
+  </table>
+  <p>These figures are <em>per single 30-day cohort</em>, repeated four times a year, with margin above
+  90% at every volume.</p>
+
+  <div class="assume" id="ueAssume">Printed snapshot — assumptions as set in the live panel.</div>
+</section>
+
+<!-- ============ 8. REVENUE STREAMS ============ -->
+<section class="page" id="s8">
+  <h1 class="sec">8. Revenue Streams</h1>
+  <p class="lead">Each stream is modelled separately so that recurring revenue underpins episodic launch
+  revenue — converting a single product into a layered, compounding base.</p>
+
+  <h2>The five layers</h2>
+  <p><b>1. Cohort challenge sales</b> — the foundation: Glow Up at <span class="dyn" id="rs_gp">$18</span>
+  and Phone Detox at $12, four cohorts a year; episodic by nature, which is precisely why the recurring
+  streams matter. <b>2. Monthly membership</b> — the strategic keystone at <span class="dyn" id="rs_sp">$9</span>/mo,
+  bundling all four cohorts, monthly drops, early access and a members-only channel; ~100% incremental
+  margin and recurring whether or not a challenge launches. <b>3. Expansion packs</b> — $7–$12 weekend
+  builds sold passively forever at &gt;95% margin. <b>4. Future challenge drops</b> — each new challenge
+  sells to an audience already sold on the concept and deepens the badge-collector cross-purchase.
+  <b>5. Platform creator revenue share</b> — the endgame: outside creators host challenges on our
+  infrastructure for a take-rate, converting the company from a single brand into a marketplace.</p>
+
+  <h2>Year-1 revenue mix (live)</h2>
+  <table class="fin">
+    <thead><tr><th>Stream</th><th>Pricing</th><th class="num">Year 1 revenue</th><th class="num">Margin</th></tr></thead>
+    <tbody>
+      <tr><td>Glow Up cohorts (×4)</td><td><span class="dyn" id="rs_gp2">$18</span></td><td class="num"><span class="dyn" id="rs_glow">$0</span></td><td class="num">~93%</td></tr>
+      <tr><td>Membership subscription</td><td><span class="dyn" id="rs_sp2">$9</span>/mo</td><td class="num"><span class="dyn" id="rs_sub">$0</span></td><td class="num">~100%</td></tr>
+      <tr><td>Phone Detox (×2)</td><td>$12</td><td class="num"><span class="dyn" id="rs_pd">$0</span></td><td class="num">~93%</td></tr>
+      <tr><td>Expansion packs</td><td>$7–$12</td><td class="num"><span class="dyn" id="rs_pack">$0</span></td><td class="num">~95%</td></tr>
+      <tr class="total"><td>Total</td><td>—</td><td class="num"><span id="rs_total">$0</span></td><td class="num">&gt;90%</td></tr>
+    </tbody>
+  </table>
+  <p>Brand partnerships and sponsored challenges are deliberately sequenced <em>after</em> community
+  scale, so they monetise the audience without compromising the member-first trust that makes the
+  community valuable — and are therefore excluded from the conservative Year-1 figures above.</p>
+</section>
+
+<!-- ============ 9. GO-TO-MARKET ============ -->
+<section class="page" id="s9">
+  <h1 class="sec">9. Go-To-Market Strategy</h1>
+  <p class="lead">An executable playbook, not a summary — from building an audience before the product
+  exists, through creator seeding and affiliate mechanics, paid amplification, organic content pillars,
+  and the cohort launch sequence.</p>
+
+  <h2>Pre-launch</h2>
+  <p>The objective is to arrive at enrolment day with an audience already warm and an algorithm already
+  primed. Content documents the building of the thing itself (designing the PDF, setting up Discord,
+  testing the app) — "building in public" performs in the self-improvement niche and signals
+  authenticity. Every piece drives to a simple email capture and a "doors open [date]" promise. The
+  countdown series escalates as the start nears, turning the waitlist window into compounding
+  anticipation. The email list is the one audience asset the algorithm cannot take away — we seed it
+  from the very first post.</p>
+
+  <h2>Creator seeding</h2>
+  <p>The highest-leverage, lowest-cost channel, run identically before every cohort: identify 8–12
+  micro-influencers (morning-routine, skincare, fitness, self-improvement; 5k–100k engaged followers),
+  send a short low-pressure DM, and email free access to everyone who replies. Because the product is
+  digital and zero-COGS, seeding has no marginal cost. The ask is explicitly "no obligation to post,"
+  which raises reply and goodwill rates; some post once, one or two document the full journey — and
+  those deep videos sell out the next cohort. Follow-up is light: thank-you on send, a Day-8 check-in
+  (the best content moment), and a repost request.</p>
+
+  <h2>Affiliate program &amp; Spark Ads</h2>
+  <p>The affiliate program turns members and creators into a performance-only sales force via TikTok
+  Shop's native infrastructure — a standard percentage commission with a <em>tiered</em> incentive that
+  raises the rate above volume thresholds, personal discount codes for attribution, and native dashboard
+  payouts with no custom infrastructure. Spark Ads amplify <em>proven</em> organic content rather than
+  gambling on cold creative: identify the top-performing organic posts, secure whitelisting to preserve
+  the native feel, split spend between cold lookalikes and warm audiences (waitlist + prior cohorts),
+  weight toward warm in the final 48-hour window, and pour budget into the single best-converting
+  creative as the close approaches. Amplify winners, never discover with paid — that discipline keeps
+  paid CAC low and protects margin.</p>
+
+  <h2>Organic content pillars</h2>
+  <ul>
+    <li><b>The founder journey</b> — the documented 30 days along the struggle → turning point → transformation arc (Day 1 stats, Day 8 near-quit, Day 15 change, Day 30 reveal).</li>
+    <li><b>Community proof</b> — reposted member check-ins and before/after, which outperforms branded content by an order of magnitude because it is real.</li>
+    <li><b>Education / value</b> — short, specific tips drawn from the pillars that establish authority.</li>
+    <li><b>Behind-the-scenes</b> — building-in-public authenticity content.</li>
+    <li><b>Urgency / launch</b> — countdown and "doors close in 48 hours" concentrated in the enrolment window.</li>
+  </ul>
+
+  <h2>Cohort launch mechanics</h2>
+  <p>A repeatable machine run four times a year: the announcement video shows the PDF and app briefly,
+  explains the four pillars in ~30 seconds, states the fixed start date and the 48-hours-before close,
+  and points to link-in-bio. The enrolment window stays open through the waitlist period while
+  anticipation content compounds; the 48-hour urgency window before close is the conversion engine — the
+  two largest sales days — supported by last-chance content and a final email push. The email sequence
+  runs announcement → reminder → urgency → last-chance, mirroring the on-platform content so the warm
+  list converts at its highest possible rate right before the doors lock.</p>
+</section>
+
+<!-- ============ 10. COMMUNITY & RETENTION ============ -->
+<section class="page" id="s10">
+  <h1 class="sec">10. Community &amp; Retention Strategy</h1>
+  <p class="lead">The Discord community is the one component that appreciates with every new member while
+  everything else merely holds its value — which makes it the only true moat in the business.</p>
+
+  <h2>Why community is the most important asset</h2>
+  <p>A PDF is worth the same to the thousandth buyer as to the first. A community is worth dramatically
+  more to the thousandth buyer, because its value is a function of how many other people are inside it.
+  This is the only component with that property, so it is the only component that constitutes a true
+  moat. Competitors can clone the deliverable instantly; they cannot clone a living room of hundreds
+  mid-cohort, the proof on the walls, or the friendships forming in general chat. The community is
+  simultaneously the product's stickiness mechanism, its best marketing channel, and its competitive
+  defence.</p>
+
+  <h2>The one-time-use gating system</h2>
+  <p>Access is gated by a single-use alphanumeric code delivered in the PDF and confirmation email,
+  redeemed once through a free verification bot that grants the member role and then expires the code so
+  it cannot be shared. Technically this enforces paid-only access with no custom infrastructure;
+  experientially, entering a code that works once makes membership feel earned and exclusive, raising
+  perceived value the moment a member walks in.</p>
+
+  <h2>Moderators, roles &amp; the collector mechanic</h2>
+  <p>The founder moderates personally at launch — ~15 minutes a day to read check-ins, respond, and keep
+  energy high, which also keeps the founder close to the customer. Past 500 members, the most engaged
+  member is promoted to moderator in exchange for free future access — a proven model where a community's
+  most passionate member becomes its manager at near-zero cash cost, recruited from within so culture is
+  preserved. Roles and badges progress with participation, and badges are collectible across challenge
+  volumes — a retention and cross-sell engine, because a member buys the next challenge partly to
+  complete the set. Recognition, not cash, is the currency, which keeps the honor-based system cheap and
+  the motivation intrinsic.</p>
+
+  <div class="callout sage"><b>The network-effect flywheel.</b> Each new member posts check-ins and
+  before/after content → the day-channels fill and the community feels more alive → the experience
+  becomes more valuable and motivating for every existing member → completion rates rise → more proof
+  content is produced → which markets the next cohort and feeds the affiliate engine → which brings in
+  more members. Every turn makes the platform more valuable for everyone already on it and harder for any
+  competitor to displace. This is the structural reason the business compounds rather than merely
+  repeats.</p>
+
+  <h2>From community to platform</h2>
+  <p>The terminal state is the platform transition: once the community is large, active and culturally
+  established, outside creators host their own challenges inside it for a revenue share. The community
+  built in Year One to retain members becomes, in the maturity phase, the asset that attracts creators
+  and justifies a venture-scale outcome — the network effect that began with synchronised cohorts
+  becoming a two-sided marketplace.</p>
+</section>
+
+<!-- ============ 11. FINANCIAL MODEL ============ -->
+<section class="page" id="s11">
+  <h1 class="sec">11. Financial Model</h1>
+  <p class="lead">A live month-by-month Year-1 P&amp;L and a 3-year projection — every cell driven by the
+  panel. Figures are deliberately conservative and consistent with the unit economics in Section 7.</p>
+
+  <div class="cards">
+    <div class="card"><div class="v" id="f_rev">$0</div><div class="l">Year 1 revenue</div></div>
+    <div class="card a"><div class="v" id="f_ebitda">$0</div><div class="l">Year 1 EBITDA</div></div>
+    <div class="card g"><div class="v" id="f_margin">0%</div><div class="l">EBITDA margin</div></div>
+    <div class="card s"><div class="v" id="f_buyers">0</div><div class="l">Challenge buyers (Y1)</div></div>
+  </div>
+  <div class="cards three">
+    <div class="card"><div class="v" id="f_subs">0</div><div class="l">Exit subscribers (M12)</div></div>
+    <div class="card a"><div class="v" id="f_mrr">$0</div><div class="l">Exit MRR (membership)</div></div>
+    <div class="card g"><div class="v" id="f_end">$0</div><div class="l">Year-end cash (EBITDA cum.)</div></div>
+  </div>
+
+  <h3>Stated assumptions</h3>
+  <p style="font-size:13px;color:var(--muted)">Four cohorts (Jan/Apr/Jul/Oct) with the size and growth
+  set in the panel; Phone Detox launches in months 6 and 9; membership accumulates new subscribers from
+  each cohort at the set conversion and erodes at the set monthly churn; expansion packs attach to new
+  buyers; variable costs are platform fees plus affiliate commission on one-time sales; COGS ≈ 0; founder
+  compensation is not drawn in Year 1.</p>
+
+  <table class="fin">
+    <thead><tr><th>Month</th><th class="num">Buyers</th><th class="num">Revenue</th><th class="num">Variable</th><th class="num">Fixed OpEx</th><th class="num">EBITDA</th><th class="num">Cum.</th></tr></thead>
+    <tbody id="y1body"></tbody>
+  </table>
+
+  <h2>Three-year projection</h2>
+  <table class="fin">
+    <thead><tr><th>Year</th><th class="num">Revenue</th><th class="num">Gross profit</th><th class="num">EBITDA</th><th class="num">Margin</th></tr></thead>
+    <tbody id="y3body"></tbody>
+  </table>
+
+  <h2>Sensitivity</h2>
+  <p>The key variable in every scenario is the cohort-volume ramp (driven by content virality and creator
+  performance); membership conversion is the secondary lever. The live scenario tag in the panel flips
+  between <b>Conservative</b> (&lt;$55K), <b>Base</b> ($55–110K) and <b>Optimistic</b> (&gt;$110K) as the
+  total crosses those thresholds. Across all three, gross margin stays above 90% and the business is
+  cash-flow positive from its first cohort — the downside is bounded by the near-zero cost structure, and
+  the upside is driven by content outcomes the go-to-market engine is specifically designed to
+  manufacture.</p>
+
+  <div class="assume" id="finAssume">Printed snapshot — assumptions as set in the live panel.</div>
+</section>
+
+<!-- ============ 12. TEAM ============ -->
+<section class="page" id="s12">
+  <h1 class="sec">12. Founding Team</h1>
+  <p class="lead">The combination on display — technical ability to own the experience layer,
+  quantitative rigour to exploit the data layer, and a real entrepreneurial track record — is rare in a
+  first-time consumer-brand founder and directly de-risks the two hardest parts of this plan.</p>
+
+  <h2>A founder built for this specific business</h2>
+  <p>The Glow Room's central bet is that owning a branded, data-generating web app beats renting Notion —
+  and that bet is only available to a founder who can actually build and operate software. Most
+  consumer-brand founders cannot, which is exactly why most challenge products default to Notion and
+  surrender their brand and data. This founder can, converting the single hardest and most defensible
+  part of the plan from a hiring risk into an in-house capability. The match between founder and venture
+  is not incidental; the entire architecture was chosen <em>because</em> the founder can execute it.</p>
+
+  <div class="cards three">
+    <div class="card"><div class="v">Web apps</div><div class="l">Direct development experience — builds the owned app in-house</div></div>
+    <div class="card a"><div class="v">MSDAS</div><div class="l">Data Analytics &amp; Statistics, Washington University in St. Louis</div></div>
+    <div class="card g"><div class="v">2 ventures</div><div class="l">UTrucking &amp; Maison Lumière — real customers, real P&amp;L</div></div>
+  </div>
+
+  <h2>Technical &amp; analytical foundation</h2>
+  <p>Direct <b>web application development</b> experience is the linchpin of the technology strategy: the
+  custom app and its behavioral-data pipeline can be built and iterated in-house on the Section-5
+  timeline without the cost, delay or loss of control of an external hire, and it makes the long-term
+  platform vision a credible internal roadmap. The <b>quantitative analytics</b> foundation — anchored by
+  graduate study in the MSDAS program at Washington University in St. Louis — is the second asset: the
+  business's defensibility rests on the behavioral dataset the app generates, and a founder trained in
+  data analytics and statistics can convert that raw data into better-designed cohorts, sharper Day-8
+  interventions, and disciplined, evidence-based decisions on pricing, content and paid amplification.
+  The data moat is only a moat if someone can read it.</p>
+
+  <h2>Entrepreneurial track record</h2>
+  <p>The founder is not a first-time operator. Prior ventures — <b>UTrucking</b> and <b>Maison
+  Lumière</b> — demonstrate the ability to start, build and run real businesses with real customers and
+  real P&amp;L responsibility, spanning operational logistics on one hand and brand/consumer sensibility
+  on the other. The Glow Room requires both: operational discipline (a four-cohort-a-year machine, a
+  moderated community, shipping software) and brand instinct (a Gen Z aesthetic and a warm,
+  never-preachy voice). Having already built businesses on both sides of that line is precisely the
+  experience this venture demands — and structurally avoids the three classic failure modes of a
+  challenge-product founder (can't build, can't read data, never shipped).</p>
+</section>
+
+<!-- ============ 13. RISKS ============ -->
+<section class="page" id="s13">
+  <h1 class="sec">13. Risks &amp; Mitigations</h1>
+  <p class="lead">Specific risks to <em>this</em> business — not generic startup risks — each paired with
+  a mitigation, most already designed into the model.</p>
+  <table class="fin">
+    <thead><tr><th>Risk</th><th>Why it's real here</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td><b>TikTok algorithm dependency</b></td><td>GTM leans on organic reach; an algo change or account loss throttles the primary channel</td><td>Own the email list from first touch; three content layers; affiliate spread; recurring membership revenue independent of new reach</td></tr>
+      <tr><td><b>Cohort dropout</b></td><td>Quitting dries up proof, repurchase and community energy</td><td>Designed emotional arc; fortified Day-8; synchronised cohort as social glue; habit anchor; data-driven re-engineering each cohort</td></tr>
+      <tr><td><b>Discord health</b></td><td>A community can turn toxic or silent — destroying the core asset</td><td>Founder-led moderation + clear rules at launch; moderators promoted from within; cohort cadence keeps energy refreshed</td></tr>
+      <tr><td><b>App failure mid-cohort</b></td><td>An outage during the check-in window damages brand at the worst moment</td><td>Managed serverless stack; Discord as functional fallback; in-house technical fixes; mandatory pre-cohort end-to-end testing</td></tr>
+      <tr><td><b>Creator underperformance</b></td><td>Seeded creators may post little or not convert</td><td>Over-provision (8–12, zero-COGS); founder journey as guaranteed baseline; self-replenishing community proof</td></tr>
+      <tr><td><b>Pricing sensitivity</b></td><td>$18 may be too high to convert or too low to signal quality</td><td>Deliberate impulse/credibility balance; $12 Detox entry; empirical price testing via data; $25 premium tier</td></tr>
+      <tr><td><b>Funded competitor</b></td><td>Headspace/Noom could copy the format with more capital</td><td>Moat is community + proof + data + Gen-Z brand, not the format; incumbents structurally mismatched to TikTok-native, founder-led execution</td></tr>
+      <tr><td><b>Platform fee changes</b></td><td>Gumroad/Stripe/TikTok could raise fees</td><td>&gt;90% margins absorb increases; multi-processor architecture; shift toward owned Stripe + membership</td></tr>
+      <tr><td><b>Key-person dependency</b></td><td>One founder builds, moderates and creates content</td><td>Delegated moderation as it scales; managed stack lowers bus-factor; recurring revenue persists through short absences; raise funds first hires</td></tr>
+      <tr><td><b>Seasonality</b></td><td>Revenue concentrated in four spikes; January outsized</td><td>Membership smooths troughs; packs sell year-round; Detox sequenced between cohorts; no single launch is the whole year</td></tr>
+      <tr><td><b>Privacy / minors</b></td><td>Audience includes 16-year-olds; app collects photos &amp; behavioral data</td><td>Private per-user storage (RLS); public sharing only with explicit consent; minimal data collection; clear terms and age floor</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 14. ROADMAP ============ -->
+<section class="page" id="s14">
+  <h1 class="sec">14. 90-Day Launch Roadmap</h1>
+  <p class="lead">Twelve weekly milestone sets with named deliverables, built around a flagship cohort
+  Day 1 at roughly Day 90.</p>
+  <table class="fin">
+    <thead><tr><th>Week</th><th>Focus</th><th>Named deliverable</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Brand + PDF</td><td>Locked name, visual identity, finished high-res Glow Up PDF</td></tr>
+      <tr><td>2</td><td>App foundation + core loop</td><td>Next.js + Supabase, magic-link auth, dashboard, check-ins, intake quiz — a member can complete a day</td></tr>
+      <tr><td>3</td><td>App engagement + Discord</td><td>Streaks, progress, leaderboard, push, Day-8 state; full server with code-gated bot</td></tr>
+      <tr><td>4</td><td>Commerce + test</td><td>Stripe + webhook provisioning, access codes, email wiring; full test purchase; sales page</td></tr>
+      <tr><td>5</td><td>Build in public</td><td>Live TikTok account + growing waitlist</td></tr>
+      <tr><td>6</td><td>Creator outreach</td><td>12 micro-influencers DM'd, access sent to every reply</td></tr>
+      <tr><td>7</td><td>Open enrolment</td><td>Announcement video live; cohort open; first sales; announcement email</td></tr>
+      <tr><td>8</td><td>Anticipation + proof</td><td>Daily content; first seeded-creator posts populate the sales-page testimonials</td></tr>
+      <tr><td>9</td><td>Urgency + close</td><td>48-hour window; urgency/last-chance emails; enrolment locked</td></tr>
+      <tr><td>10</td><td>Cohort Day 1 + first 100</td><td>Founder Day-1 content; every member welcomed personally; tone set for 30 days</td></tr>
+      <tr><td>11</td><td>Mid-cohort + sub seeding</td><td>Day-8 support; membership seeded to engaged members; best check-ins reposted</td></tr>
+      <tr><td>12</td><td>Day 30 + membership + analysis</td><td>Before/after reveals collected; <em>Glow Room Monthly</em> launched; post-cohort data analysis &amp; Cohort-2 plan</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ 15. APPENDIX ============ -->
+<section class="page" id="s15">
+  <h1 class="sec">15. Appendix</h1>
+  <p class="lead">Ready-to-use assets so the plan can be executed immediately — production-drafted and
+  on-brand: direct, warm, slightly funny, never preachy.</p>
+
+  <h2>Glow Up Challenge — Days 1–7 (as they appear in the app)</h2>
+  <table class="fin daygrid">
+    <thead><tr><th>Day</th><th>Movement</th><th>Skin</th><th>Mindset prompt</th></tr></thead>
+    <tbody>
+      <tr><td>Day 1</td><td>20-min walk, outside if you can</td><td>Cleanser only — wash properly, AM &amp; PM</td><td>"Write the version of you you're hoping to meet in 30 days. Be specific."</td></tr>
+      <tr><td>Day 2</td><td>20 min — walk or a stretch flow</td><td>Cleanser AM/PM</td><td>"One small thing you did today your future self would be proud of?"</td></tr>
+      <tr><td>Day 3</td><td>Walk + 5 squats whenever you remember</td><td>Cleanser + night moisturiser</td><td>"Three things you've been avoiding — and one sentence on why."</td></tr>
+      <tr><td>Day 4</td><td>20 min that raises your heart rate</td><td>SPF day — why it matters, how much, every morning</td><td>"What would you do this week if you knew you couldn't fail?"</td></tr>
+      <tr><td>Day 5</td><td>20-min walk + podcast/playlist</td><td>Cleanse, moisturise, SPF</td><td>"One belief about yourself that's held you back — where's it from?"</td></tr>
+      <tr><td>Day 6</td><td>Circuit ×3: 10 squats, 10 push-ups, 20s plank</td><td>Cleanse, moisturise, SPF</td><td>"A moment this week you felt genuinely good — what caused it?"</td></tr>
+      <tr><td>Day 7</td><td>Dance day — 5 songs, move how you want</td><td>Routine + Day-7 progress photo (same light as Day 1)</td><td>"Reflect on week one. What surprised you about yourself?"</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:var(--muted)">Each day also assigns the member's chosen <b>habit anchor</b>
+  (set in the intake quiz), identical for all 30 days.</p>
+
+  <h2>Phone Detox — Days 1–3</h2>
+  <ul>
+    <li><b>Day 1 — The reveal.</b> Screenshot &amp; log your current daily screen-time average (your "before"). Set one rule for tomorrow: no phone for the first hour after waking. <em>You can't change what you won't look at.</em></li>
+    <li><b>Day 2 — Reclaim the morning.</b> Hold the rule. Delete the single app you lose the most time to — reinstall on Day 8 if you still want it (you won't).</li>
+    <li><b>Day 3 — Make it boring.</b> Grayscale for the day; move your top three time-sink apps off the home screen. <em>Colour and convenience are the slot-machine — remove them and the pull quietly dies.</em></li>
+  </ul>
+
+  <h2>Discord welcome message</h2>
+  <div class="callout rose" style="font-style:normal">Welcome to The Glow Room. 🤍 You made it in — which
+  means you're holding a one-time code and you're officially one of us. <b>1.</b> Drop your code into
+  #verify to unlock everything. <b>2.</b> Say hi in #introductions — name, where you're from, what you
+  want from these 30 days, and your Day 1 stats. <b>3.</b> Find your day — when you finish, post your
+  check-in in that day's channel. Watching the room fill with people doing the exact same day as you is
+  the whole magic. No pressure to be perfect. Just show up. We'll do the rest together.</div>
+
+  <h2>Creator outreach DM &amp; follow-ups</h2>
+  <p style="font-size:13px"><b>Initial DM:</b> "hey [name] — I really love your [content type] stuff. I'm
+  launching a 30-day Glow Up Challenge on [date] — four pillars (movement, skin, mindset, one daily
+  habit), all inside a little app + a private community doing it together. I'd love to give you full free
+  access, no strings and zero obligation to post. Want me to send it over?"<br>
+  <b>On reply:</b> send PDF + app access + Discord code, "your start date is [date], I'm around for
+  questions."<br>
+  <b>Day 8:</b> "how's it going? day 8 is the one where everyone wants to quit — if you're feeling it,
+  that's exactly on schedule 😅 makes for great content either way."<br>
+  <b>After a good post:</b> "this is incredible — ok if I reshare it on the [brand] page with credit?"</p>
+
+  <h2>TikTok scripts (3 formats)</h2>
+  <ul style="font-size:13px">
+    <li><b>Founder journey (Day 8):</b> "Day 8 and I genuinely almost quit this morning. Here's the thing nobody tells you — day 8 is <em>designed</em> to feel like this. So I did the smallest version: a 20-minute walk instead of a workout. Don't quit on the hardest day. Quit on an easy one. (You won't.)"</li>
+    <li><b>Community proof:</b> "This is [name] on Day 1 vs Day 30. She washed her face properly, walked every day, journaled five minutes, and showed up when she didn't feel like it. That's the whole thing. Next cohort starts [date]."</li>
+    <li><b>Phone Detox irony:</b> "I built a 7-day phone detox and I'm advertising it on TikTok. I know. But here's my screen time before [number] and after [number]. The challenge isn't throwing your phone in a lake — it's getting your first hour back. Link's in bio, ironically."</li>
+  </ul>
+
+  <h2>Cohort enrolment email sequence</h2>
+  <ol style="font-size:13px">
+    <li><b>Announcement</b> — "Doors are open. We start [date]." What it is, four pillars in three lines, start + close dates, one CTA.</li>
+    <li><b>Reminder</b> — "A quick look inside before you decide." App + Discord peek, one proof clip, CTA.</li>
+    <li><b>Urgency (48h)</b> — "Enrolment closes in 48 hours — then we lock the doors." Next chance is [next cohort]. CTA.</li>
+    <li><b>Last chance</b> — "Last call — doors close tonight." One paragraph, one CTA, the next cohort date as the cost of waiting.</li>
+  </ol>
+
+  <h2>Brand name shortlist &amp; palette</h2>
+  <div class="swatches">
+    <div class="swatch" style="background:#123F39">SPRUCE</div>
+    <div class="swatch" style="background:#E2785A">CORAL</div>
+    <div class="swatch" style="background:#2C7A70">TEAL</div>
+    <div class="swatch" style="background:#E0A23C">HONEY</div>
+    <div class="swatch" style="background:#FBF8F1;color:#6E726B;border:1px solid #E3DDD0">IVORY</div>
+  </div>
+  <p style="font-size:13px"><b>The Glow Room</b> <span style="color:var(--gold)">(lead)</span> — feels
+  like a place you arrive at, not a product; maps to the community-as-destination strategy and the "Glow
+  Legend" badge language. <b>Luminous</b> — premium, harder to claim as a handle. <b>The Reset</b> —
+  captures the seasonal framing; risks being generic. <b>Glow Era</b> — very Gen Z, hashtag-native,
+  trend-dependent. <em>Recommendation (flagged — the name was left open): lead with The Glow Room, using
+  "Glow Up Challenge" as the flagship product beneath it.</em></p>
+
+  <h2>Recommended stack &amp; monthly cost</h2>
+  <table class="fin">
+    <thead><tr><th>Tool</th><th>Purpose</th><th class="num">Monthly</th></tr></thead>
+    <tbody>
+      <tr><td>Next.js + Tailwind</td><td>App framework + styling</td><td class="num">$0</td></tr>
+      <tr><td>Vercel</td><td>Hosting / deploy</td><td class="num">$0 → $20</td></tr>
+      <tr><td>Supabase</td><td>Postgres, auth, storage</td><td class="num">$0 → $25</td></tr>
+      <tr><td>Stripe / Gumroad</td><td>Payments</td><td class="num">% per txn</td></tr>
+      <tr><td>Resend / Postmark</td><td>Email</td><td class="num">$0 → $15</td></tr>
+      <tr><td>OneSignal · Discord · MEE6</td><td>Push + community</td><td class="num">$0</td></tr>
+      <tr><td>PostHog</td><td>Behavioral analytics</td><td class="num">$0 → usage</td></tr>
+      <tr><td>Canva Pro</td><td>PDF + brand assets</td><td class="num">~$13</td></tr>
+      <tr class="total"><td>Total</td><td>Effectively $0 early → at scale</td><td class="num">~$50–150</td></tr>
+    </tbody>
+  </table>
+  <p class="footnote">End of document · The Glow Room — Confidential Business Plan &amp; Investment
+  Memorandum — v2 (Interactive) — June 2026</p>
+</section>
+
+</div><!--/doc-->
+
+<script>
+// ============================ LIVE MODEL ============================
+const CFG = [
+  {g:"Pricing & fees"},
+  {id:"price",   lab:"Glow Up price",            min:9,  max:30,  step:1,   def:18,  fmt:"$"},
+  {id:"pdPrice", lab:"Phone Detox price",        min:5,  max:25,  step:1,   def:12,  fmt:"$"},
+  {id:"fee",     lab:"Platform + payment fee",   min:3,  max:12,  step:0.5, def:7,   fmt:"%"},
+  {id:"affil",   lab:"Affiliate commission",     min:0,  max:25,  step:1,   def:10,  fmt:"%"},
+  {g:"Cohort ramp (Year 1)"},
+  {id:"c1",      lab:"Cohort 1 buyers",          min:25, max:1500,step:25,  def:120, fmt:"#"},
+  {id:"growth",  lab:"Growth per cohort",        min:0,  max:150, step:5,   def:55,  fmt:"%"},
+  {id:"pdBuyers",lab:"Phone Detox buyers / launch",min:0,max:1500,step:25,  def:125, fmt:"#"},
+  {g:"Membership"},
+  {id:"subConv", lab:"Buyers → subscribers",     min:0,  max:40,  step:1,   def:16,  fmt:"%"},
+  {id:"subPrice",lab:"Membership price / mo",    min:5,  max:20,  step:1,   def:9,   fmt:"$"},
+  {id:"churn",   lab:"Monthly churn",            min:2,  max:25,  step:1,   def:7,   fmt:"%"},
+  {g:"Expansion packs"},
+  {id:"packAtt", lab:"Pack attach rate",         min:0,  max:40,  step:1,   def:12,  fmt:"%"},
+  {id:"packPr",  lab:"Avg pack price",           min:5,  max:15,  step:1,   def:9,   fmt:"$"},
+  {g:"OpEx & funding"},
+  {id:"mktg",    lab:"Marketing / month",        min:0,  max:8000,step:100, def:600, fmt:"$k"},
+  {id:"fixedOp", lab:"Other fixed OpEx / month", min:0,  max:8000,step:100, def:250, fmt:"$k"},
+  {id:"raise",   lab:"Equity raise (optional)",  min:0,  max:150000,step:5000,def:50000,fmt:"$k"},
+  {g:"3-year projection"},
+  {id:"y2mult",  lab:"Year 2 revenue × Year 1",  min:1.2,max:6,   step:0.1, def:2.3, fmt:"x"},
+  {id:"y3mult",  lab:"Year 3 revenue × Year 2",  min:1.1,max:4,   step:0.1, def:2.0, fmt:"x"},
+  {id:"opexpct", lab:"Mature all-in OpEx (% rev)",min:25,max:70,  step:1,   def:45,  fmt:"%"},
+];
+
+function fmt(v,t){
+  if(t==="$")  return "$"+v.toFixed(0);
+  if(t==="$2") return "$"+v.toFixed(2);
+  if(t==="$k") return "$"+(v/1000).toFixed(v>=10000?0:1)+"k";
+  if(t==="%")  return (v%1?v.toFixed(1):v.toFixed(0))+"%";
+  if(t==="x")  return v.toFixed(1)+"×";
+  if(t==="#")  return Math.round(v).toLocaleString();
+  return v;
+}
+function money(x){return (x<0?"(":"")+"$"+Math.abs(Math.round(x)).toLocaleString()+(x<0?")":"");}
+function moneyK(x){var s=x<0?"-":"";x=Math.abs(x);
+  return s+(x>=1000?"$"+(x/1000).toFixed(x>=100000?0:1)+"K":"$"+Math.round(x));}
+function pct(x){return Math.round(x)+"%";}
+
+const wrap=document.getElementById("sliders");
+CFG.forEach(function(c){
+  if(c.g){var d=document.createElement("div");d.className="grp";d.textContent=c.g;wrap.appendChild(d);return;}
+  var d=document.createElement("div");d.className="sl";
+  d.innerHTML='<div class="row"><span class="lab">'+c.lab+'</span><span class="out" id="o_'+c.id+'"></span></div>'+
+    '<input type="range" id="'+c.id+'" min="'+c.min+'" max="'+c.max+'" step="'+c.step+'" value="'+c.def+'">';
+  wrap.appendChild(d);
+  d.querySelector("input").addEventListener("input",recalc);
+});
+function V(id){return parseFloat(document.getElementById(id).value);}
+function setT(id,t){var e=document.getElementById(id);if(e)e.textContent=t;}
+
+function recalc(){
+  var price=V("price"),pdPrice=V("pdPrice"),fee=V("fee")/100,affil=V("affil")/100;
+  var c1=V("c1"),g=V("growth")/100,pdB=V("pdBuyers");
+  var subConv=V("subConv")/100,subPrice=V("subPrice"),churn=V("churn")/100;
+  var packAtt=V("packAtt")/100,packPr=V("packPr");
+  var mktg=V("mktg"),fixedOp=V("fixedOp"),raise=V("raise");
+  var y2mult=V("y2mult"),y3mult=V("y3mult"),opexpct=V("opexpct")/100;
+
+  CFG.forEach(function(c){if(c.id)setT("o_"+c.id,fmt(V(c.id),c.fmt));});
+
+  // ---- per-sale waterfall (Section 7) ----
+  var feeAmt=price*fee, affAmt=price*affil, contrib=price-feeAmt-affAmt;
+  setT("ue_price","$"+price.toFixed(2));
+  setT("ue_fee","($"+feeAmt.toFixed(2)+")");
+  setT("ue_affil","($"+affAmt.toFixed(2)+")");
+  setT("ue_cogs","$0.00");
+  setT("ue_contrib","$"+contrib.toFixed(2));
+  setT("ue_cm",pct(contrib/price*100));
+
+  // exec summary cards
+  setT("es_price","$"+price.toFixed(0));
+  setT("es_cm",pct(contrib/price*100));
+  setT("es_gp","$"+price.toFixed(0));
+  setT("es_sp","$"+subPrice.toFixed(0));
+
+  // unit-econ table (Section 7)
+  var ub=document.getElementById("ueBody");if(ub){ub.innerHTML="";
+    [100,500,1000,5000].forEach(function(u){
+      var gross=u*price,f=gross*fee,net=gross-f,con=net-gross*affil;
+      ub.insertAdjacentHTML("beforeend","<tr><td>"+u.toLocaleString()+"</td><td class='num'>"+
+        money(gross)+"</td><td class='num'>"+money(f)+"</td><td class='num'>"+money(net)+
+        "</td><td class='num'>"+money(con)+"</td></tr>");
+    });}
+
+  // ---- cohort sizes & yearly streams ----
+  var cohortMonths=[1,4,7,10], pdMonths=[6,9];
+  var sizes=[c1]; for(var i=1;i<4;i++)sizes.push(Math.round(sizes[i-1]*(1+g)));
+
+  var subs=0, cum=raise>0?0:0; // digital: no big upfront; start cash at 0 (raise tracked separately)
+  var yRev=0,yVar=0,yFix=0,yEbitda=0,yBuyers=0;
+  var yGlow=0,ySub=0,yPd=0,yPack=0, exitMRR=0;
+  var rows=[];
+  for(var m=1;m<=12;m++){
+    var ci=cohortMonths.indexOf(m);
+    var newGlow = ci>=0 ? sizes[ci] : 0;
+    var newPd   = pdMonths.indexOf(m)>=0 ? pdB : 0;
+    var newBuyers=newGlow+newPd;
+
+    var glowRev=newGlow*price;
+    var pdRev=newPd*pdPrice;
+    var newSubs=newBuyers*subConv;
+    subs=subs*(1-churn)+newSubs;
+    var subRev=subs*subPrice;
+    var packRev=newBuyers*packAtt*packPr;
+
+    var rev=glowRev+pdRev+subRev+packRev;
+    var variable=rev*fee + (glowRev+pdRev)*affil;   // affiliate on one-time only
+    var fixed=mktg+fixedOp;
+    var ebitda=rev-variable-fixed;
+    cum+=ebitda;
+
+    yRev+=rev;yVar+=variable;yFix+=fixed;yEbitda+=ebitda;yBuyers+=newBuyers;
+    yGlow+=glowRev;ySub+=subRev;yPd+=pdRev;yPack+=packRev;
+    if(m===12)exitMRR=subRev;
+    rows.push({m:m,buyers:newBuyers,rev:rev,variable:variable,fixed:fixed,ebitda:ebitda,cum:cum});
+  }
+  var margin=yRev>0?yEbitda/yRev*100:0;
+
+  // ---- Year-1 P&L table ----
+  var tb=document.getElementById("y1body");if(tb){tb.innerHTML="";
+    var names=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    rows.forEach(function(r){
+      var tag=cohortMonths.indexOf(r.m)>=0?" ★":(pdMonths.indexOf(r.m)>=0?" ·":"");
+      tb.insertAdjacentHTML("beforeend","<tr><td>"+names[r.m-1]+tag+"</td><td class='num'>"+
+        r.buyers.toLocaleString()+"</td><td class='num'>"+money(r.rev)+"</td><td class='num'>"+
+        money(r.variable)+"</td><td class='num'>"+money(r.fixed)+"</td><td class='num' style='color:"+
+        (r.ebitda<0?'#B03A4B':'#2E7D5B')+"'>"+money(r.ebitda)+"</td><td class='num'>"+money(r.cum)+"</td></tr>");
+    });
+    tb.insertAdjacentHTML("beforeend","<tr class='total'><td>Year 1</td><td class='num'>"+
+      yBuyers.toLocaleString()+"</td><td class='num'>"+money(yRev)+"</td><td class='num'>"+money(yVar)+
+      "</td><td class='num'>"+money(yFix)+"</td><td class='num'>"+money(yEbitda)+"</td><td class='num'>"+
+      money(cum)+"</td></tr>");
+  }
+
+  // ---- financial cards ----
+  setT("f_rev",moneyK(yRev));setT("f_ebitda",moneyK(yEbitda));setT("f_margin",pct(margin));
+  setT("f_buyers",yBuyers.toLocaleString());setT("f_subs",Math.round(subs).toLocaleString());
+  setT("f_mrr",moneyK(exitMRR));setT("f_end",money(cum));
+
+  // ---- revenue streams (Section 8) ----
+  setT("rs_gp","$"+price.toFixed(0));setT("rs_gp2","$"+price.toFixed(0));
+  setT("rs_sp","$"+subPrice.toFixed(0));setT("rs_sp2","$"+subPrice.toFixed(0));
+  setT("rs_glow",money(yGlow));setT("rs_sub",money(ySub));
+  setT("rs_pd",money(yPd));setT("rs_pack",money(yPack));setT("rs_total",money(yRev));
+
+  // ---- exec summary live figures ----
+  setT("es_rev",moneyK(yRev));setT("es_rev2",moneyK(yRev));setT("es_ebitda",moneyK(yEbitda));
+  setT("es_margin",pct(margin));setT("es_mrr",moneyK(exitMRR));setT("es_mrr2",moneyK(exitMRR));
+
+  // ---- 3-year ----
+  var gmBlend=0.93;
+  var y1Rev=yRev, y2Rev=y1Rev*y2mult, y3Rev=y2Rev*y3mult;
+  var y3b=document.getElementById("y3body");if(y3b){y3b.innerHTML="";
+    function yr(label,rev,eb,cls){var gp=rev*gmBlend;var em=rev>0?eb/rev*100:0;
+      return "<tr"+(cls?" class='"+cls+"'":"")+"><td>"+label+"</td><td class='num'>"+money(rev)+
+        "</td><td class='num'>"+money(gp)+"</td><td class='num'>"+money(eb)+"</td><td class='num'>"+
+        Math.round(em)+"%</td></tr>";}
+    y3b.insertAdjacentHTML("beforeend",yr("Year 1",y1Rev,yEbitda,""));
+    y3b.insertAdjacentHTML("beforeend",yr("Year 2",y2Rev,y2Rev*(gmBlend-opexpct),"hl"));
+    y3b.insertAdjacentHTML("beforeend",yr("Year 3",y3Rev,y3Rev*(gmBlend-opexpct),"hlg"));
+  }
+
+  // ---- sidebar KPIs + scenario ----
+  setT("kpi_rev",moneyK(yRev));setT("kpi_ebitda",moneyK(yEbitda));
+  setT("kpi_margin",pct(margin));setT("kpi_mrr",moneyK(exitMRR));
+  var scen=yRev<30000?"CONSERVATIVE":(yRev<=90000?"BASE CASE":"OPTIMISTIC");
+  setT("scenTag",scen);
+
+  // ---- print assumption boxes ----
+  var aTxt="Snapshot — Glow Up $"+price+", Detox $"+pdPrice+", fee "+(fee*100)+"%, affiliate "+
+    (affil*100)+"%. Cohort 1 = "+c1+" buyers, growth "+(g*100)+"%/cohort ("+sizes.join("→")+
+    "). Membership $"+subPrice+"/mo, conversion "+(subConv*100)+"%, churn "+(churn*100)+
+    "%/mo. Packs "+(packAtt*100)+"% @ $"+packPr+". Marketing $"+mktg+"/mo, fixed OpEx $"+fixedOp+"/mo.";
+  setT("ueAssume",aTxt);setT("finAssume",aTxt);
+}
+document.getElementById("reset").addEventListener("click",function(){
+  CFG.forEach(function(c){if(c.id)document.getElementById(c.id).value=c.def;});recalc();
+});
+recalc();
+</script>
+</body>
+</html>

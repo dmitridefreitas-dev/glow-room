@@ -1,0 +1,39 @@
+# ---- dependencies ----
+/node_modules
+/.pnp
+.pnp.js
+
+# ---- next.js / build ----
+/.next/
+/out/
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- ENV / SECRETS — NEVER COMMIT ----
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.production.local
+
+# ---- vercel ----
+.vercel
+
+# ---- logs ----
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- os / editor ----
+.DS_Store
+Thumbs.db
+*.pem
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# ---- python build artifacts (doc tooling) ----
+__pycache__/
+*.pyc
