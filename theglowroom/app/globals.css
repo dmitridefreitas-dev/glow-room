@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* ---- The Glow Room brand tokens (Spruce & Coral palette) ---- */
+@theme {
+  --color-spruce: #123f39;
+  --color-spruce-dark: #0e3631;
+  --color-coral: #e2785a;
+  --color-coral-light: #fbe7df;
+  --color-teal: #2c7a70;
+  --color-teal-light: #dcedea;
+  --color-honey: #e0a23c;
+  --color-honey-light: #f8edd6;
+  --color-sage: #6ca77f;
+  --color-sage-light: #e4f0e7;
+  --color-ivory: #fbf8f1;
+  --color-ink: #22302c;
+  --color-muted: #6e726b;
+  --color-line: #e3ddd0;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-ivory);
+  color: var(--color-ink);
+}
