@@ -27,6 +27,15 @@ A full owner-facing explainer lives at `SYSTEM_MAP.html` (repo root).
 _Kept current. Do these in order. After each step, run the listed checks before
 moving on._
 
+### 🟢 REPO RESTRUCTURE (2026-06-16) — Next app moved to the repo ROOT
+The Next.js app no longer lives in `theglowroom/` — it's now at the repository
+root (`app/`, `lib/`, `package.json`, etc. are top-level). This makes **Vercel
+auto-detect and deploy it with zero config** (no "Root Directory" setting needed).
+Run all app commands (`npm run dev`, `npm run build`, the `scripts/*.mjs`) **from
+the repo root** now. The Discord bot's env path is now `../.env.local`.
+- _To deploy:_ on Vercel just **Redeploy** the project — it builds from the root
+  automatically. (If a Root Directory was set to `theglowroom`, clear it back to `./`.)
+
 ### ✅ DONE — migration 0005 (squads / Phase 8) applied 2026-06-15
 Verified: `squads` + `squad_members` tables and `squad_leaderboard()` present.
 Crews are live — reload `/dashboard` → **"Your crew"** to create/join one.

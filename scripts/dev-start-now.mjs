@@ -3,7 +3,7 @@
 // real midnights. The anti-cheat day-lock stays fully on; we're just moving the
 // cohort's start date, exactly like time passing.
 //
-// Run from theglowroom/:
+// Run from the repo root:
 //   node --env-file=.env.local scripts/dev-start-now.mjs        # 1 day open (Day 1)
 //   node --env-file=.env.local scripts/dev-start-now.mjs 7      # Days 1-7 open, 8+ locked
 //   node --env-file=.env.local scripts/dev-start-now.mjs 30     # whole challenge open

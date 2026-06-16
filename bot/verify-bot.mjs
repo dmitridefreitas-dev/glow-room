@@ -3,7 +3,7 @@
 // against the app's /api/discord/redeem endpoint, then grants the Member role.
 //
 // Run:  npm install  (in this folder, once)
-//       node --env-file=../theglowroom/.env.local verify-bot.mjs
+//       node --env-file=../.env.local verify-bot.mjs
 // Requires env: DISCORD_BOT_TOKEN, DISCORD_GUILD_ID, DISCORD_MEMBER_ROLE_ID,
 //               DISCORD_SHARED_SECRET   (REDEEM_URL optional)
 // Bot setup: invite with "applications.commands" + "bot" scope, give it the

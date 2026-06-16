@@ -2,7 +2,7 @@
 // Creates the Stripe products/prices (test mode) and a purchasable Glow Up
 // cohort row, then prints the membership price id to add to .env.local.
 //
-// Run from the theglowroom/ folder:
+// Run from the repo root:
 //   node --env-file=.env.local scripts/setup-stripe.mjs
 //
 // Safe-ish to re-run: it creates new Stripe prices each time, so prefer running
@@ -76,7 +76,7 @@ async function main() {
   console.log("\n✅ Stripe + cohort setup complete.\n");
   console.log("Glow Up one-time price:", glowPrice.id);
   console.log("Membership price:      ", memPrice.id);
-  console.log("\n>>> Add this line to theglowroom/.env.local:");
+  console.log("\n>>> Add this line to .env.local:");
   console.log(`STRIPE_MEMBERSHIP_PRICE_ID=${memPrice.id}\n`);
 }
 
