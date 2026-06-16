@@ -12,10 +12,15 @@ const DEV_COHORT_NAME = "Dev Cohort — local testing";
 export type EnrollmentInfo = {
   enrollmentId: string;
   cohortId: string;
+  cohortName: string | null;
   challengeType: "glow_up" | "phone_detox";
   startDate: string | null;
   totalDays: number;
   currentDay: number;
+  /** False while the cohort's start date is still in the future (UTC). */
+  started: boolean;
+  /** Whole days until the cohort starts; 0 once it has begun. */
+  daysUntilStart: number;
 };
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -23,9 +28,37 @@ type Admin = ReturnType<typeof createAdminClient>;
 function cohortOf(row: { cohorts: unknown }) {
   const c = row.cohorts;
   return (Array.isArray(c) ? c[0] : c) as {
+    name: string | null;
     challenge_type: "glow_up" | "phone_detox";
     start_date: string | null;
   };
+}
+
+/**
+ * FEATURE FLAG — pre-launch countdown.
+ * When ON, a paid member whose cohort hasn't started yet sees a "N days to go"
+ * countdown on the dashboard (and Day 1 stays locked) until launch day.
+ * Currently OFF so every account — including fresh test purchases that land in a
+ * not-yet-started cohort — drops straight into the daily loop. Flip to `true`
+ * for real launch; nothing else needs to change. See PROGRESS.md (Phase 5).
+ */
+const PRE_LAUNCH_COUNTDOWN = false;
+
+/**
+ * Whether the cohort has begun, and how many days remain until it does. Uses
+ * UTC day boundaries to match computeCurrentDay and the database day-lock.
+ * A cohort with no start date — or while the countdown flag is off — is treated
+ * as already started.
+ */
+function computeStartInfo(startDate: string | null): {
+  started: boolean;
+  daysUntilStart: number;
+} {
+  if (!PRE_LAUNCH_COUNTDOWN || !startDate) return { started: true, daysUntilStart: 0 };
+  const startMs = Date.parse(`${startDate}T00:00:00Z`);
+  const todayMs = Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
+  const daysUntil = Math.round((startMs - todayMs) / 86_400_000);
+  return { started: daysUntil <= 0, daysUntilStart: Math.max(daysUntil, 0) };
 }
 
 /**
@@ -65,7 +98,7 @@ async function provisionDevEnrollment(admin: Admin, userId: string) {
   const { data: enrollment } = await admin
     .from("enrollments")
     .insert({ user_id: userId, cohort_id: cohort!.id, status: "active" })
-    .select("id, cohort_id, cohorts(challenge_type, start_date)")
+    .select("id, cohort_id, cohorts(name, challenge_type, start_date)")
     .single();
 
   return enrollment;
@@ -78,7 +111,7 @@ export async function getEnrollmentForUser(
 
   let { data: enrollment } = await admin
     .from("enrollments")
-    .select("id, cohort_id, cohorts(challenge_type, start_date)")
+    .select("id, cohort_id, cohorts(name, challenge_type, start_date)")
     .eq("user_id", userId)
     .eq("status", "active")
     .order("created_at", { ascending: false })
@@ -92,13 +125,17 @@ export async function getEnrollmentForUser(
 
   const cohort = cohortOf(enrollment);
   const totalDays = cohort.challenge_type === "glow_up" ? 30 : 7;
+  const { started, daysUntilStart } = computeStartInfo(cohort.start_date);
 
   return {
     enrollmentId: enrollment.id,
     cohortId: enrollment.cohort_id,
+    cohortName: cohort.name,
     challengeType: cohort.challenge_type,
     startDate: cohort.start_date,
     totalDays,
     currentDay: computeCurrentDay(cohort.start_date, totalDays),
+    started,
+    daysUntilStart,
   };
 }

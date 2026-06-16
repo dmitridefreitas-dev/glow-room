@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,6 +26,12 @@ export default async function DashboardLayout({
           </span>
           <div className="flex items-center gap-4 text-xs">
             <span className="hidden text-ivory/70 sm:inline">{user.email}</span>
+            <Link
+              href="/dashboard/settings"
+              className="font-semibold text-ivory/80 transition hover:text-ivory"
+            >
+              Settings
+            </Link>
             <form action="/auth/signout" method="post">
               <button
                 type="submit"

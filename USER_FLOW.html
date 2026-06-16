@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Glow Room — User Flow & Access Map</title>
+<style>
+  :root{
+    --spruce:#123f39; --spruce-dark:#0e3631;
+    --coral:#e2785a; --coral-light:#fbe7df;
+    --teal:#2c7a70; --teal-light:#dcedea;
+    --honey:#e0a23c; --honey-light:#f8edd6;
+    --sage:#6ca77f; --sage-light:#e4f0e7;
+    --ivory:#fbf8f1; --ink:#22302c; --muted:#6e726b; --line:#e3ddd0;
+    --shadow:0 1px 2px rgba(18,63,57,.04), 0 8px 24px rgba(18,63,57,.07);
+    --shadow-lg:0 2px 4px rgba(18,63,57,.05), 0 18px 50px rgba(18,63,57,.12);
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;}
+  body{
+    margin:0; background:var(--ivory); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:1060px; margin:0 auto; padding:0 28px 100px;}
+
+  /* ---------- Masthead ---------- */
+  .mast{background:var(--spruce); color:var(--ivory); margin-bottom:44px;}
+  .mast-inner{max-width:1060px; margin:0 auto; padding:54px 28px 48px;}
+  .brandbars{display:flex; gap:6px; margin-bottom:26px;}
+  .brandbars span{height:9px; width:60px; border-radius:4px;}
+  .eyebrow{font-size:11px; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:#a9d2cb; margin:0;}
+  .mast h1{font-size:44px; line-height:1.02; font-weight:800; letter-spacing:-.02em; margin:14px 0 0;}
+  .mast .sub{font-size:17px; color:rgba(251,248,241,.82); max-width:640px; margin:16px 0 0;}
+  .mast .meta{font-size:12px; color:rgba(251,248,241,.55); margin-top:22px;}
+
+  /* ---------- Access ladder ---------- */
+  .ladder{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:0 0 12px;}
+  .tier{border-radius:16px; padding:16px 16px 18px; box-shadow:var(--shadow); position:relative; overflow:hidden;}
+  .tier .tnum{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; opacity:.7;}
+  .tier .tname{font-weight:800; font-size:15px; margin-top:3px;}
+  .tier .tdesc{font-size:12.5px; margin-top:6px; line-height:1.45;}
+  .t-public{background:#fff; border:1px solid var(--line);}
+  .t-public .tname{color:var(--ink);} .t-public .tdesc{color:var(--muted);}
+  .t-auth{background:var(--honey-light);}
+  .t-auth .tname,.t-auth .tdesc{color:var(--spruce);}
+  .t-member{background:var(--sage-light);}
+  .t-member .tname,.t-member .tdesc{color:var(--spruce);}
+  .t-discord{background:var(--teal-light);}
+  .t-discord .tname,.t-discord .tdesc{color:var(--spruce);}
+
+  .section-label{font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); margin:40px 0 14px;}
+
+  /* ---------- Legend ---------- */
+  .legend{display:flex; flex-wrap:wrap; gap:18px; padding:16px 20px; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); font-size:12.5px; color:var(--muted);}
+  .legend .li{display:flex; align-items:center; gap:8px;}
+  .chiptype{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:11px; letter-spacing:.04em; text-transform:uppercase; padding:4px 10px; border-radius:999px;}
+  .ct-page{background:var(--sage-light); color:var(--spruce);}
+  .ct-public{background:#f1ece1; color:var(--muted);}
+  .ct-api{background:var(--coral-light); color:#9c4226;}
+  .ct-bg{background:var(--teal-light); color:var(--teal);}
+  .ct-discord{background:#e7e1f2; color:#5b4a8a;}
+  .ct-gate{background:var(--honey-light); color:#8a5a12;}
+
+  /* ---------- Flow spine ---------- */
+  .flow{position:relative; margin-top:18px;}
+  .stage{position:relative; padding-left:74px; padding-bottom:30px;}
+  .stage:last-child{padding-bottom:0;}
+  /* vertical connector line */
+  .stage::before{
+    content:""; position:absolute; left:25px; top:6px; bottom:-6px; width:3px;
+    background:linear-gradient(var(--line),var(--line));
+  }
+  .stage:last-child::before{display:none;}
+  .stage .marker{
+    position:absolute; left:6px; top:0; width:42px; height:42px; border-radius:50%;
+    background:var(--spruce); color:var(--ivory); display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; box-shadow:var(--shadow); z-index:2;
+  }
+  .stage.bg .marker{background:var(--teal);}
+  .stage.discord .marker{background:#5b4a8a;}
+  .stage.public .marker{background:#fff; color:var(--spruce); border:2px solid var(--line);}
+
+  .card{background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); overflow:hidden;}
+  .card.accent-spruce{border-top:4px solid var(--spruce);}
+  .card.accent-coral{border-top:4px solid var(--coral);}
+  .card.accent-honey{border-top:4px solid var(--honey);}
+  .card.accent-sage{border-top:4px solid var(--sage);}
+  .card.accent-teal{border-top:4px solid var(--teal);}
+  .card.accent-discord{border-top:4px solid #5b4a8a;}
+  .card-pad{padding:20px 22px 22px;}
+
+  .card-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .card h3{margin:0; font-size:19px; font-weight:800; color:var(--spruce); letter-spacing:-.01em;}
+  .route{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:12.5px; background:var(--ivory); border:1px solid var(--line); color:var(--teal); padding:3px 9px; border-radius:7px; font-weight:600;}
+  .what{margin:12px 0 0; color:var(--ink); font-size:14.5px;}
+  .what .hl{color:var(--coral); font-weight:700;}
+
+  .unlocks{margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);}
+  .unlocks .ul-label{font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:9px; display:flex; align-items:center; gap:6px;}
+  .chips{display:flex; flex-wrap:wrap; gap:7px;}
+  .chip{font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:999px; display:inline-flex; align-items:center; gap:6px;}
+  .chip.have{background:var(--sage-light); color:var(--spruce);}
+  .chip.gate{background:var(--honey-light); color:#8a5a12;}
+  .chip.locked{background:#f1ece1; color:var(--muted);}
+  .chip .dot{width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.6;}
+
+  .note{margin-top:14px; font-size:12.5px; color:var(--muted); background:var(--ivory); border-left:3px solid var(--line); padding:8px 12px; border-radius:0 8px 8px 0;}
+  .note b{color:var(--ink);}
+
+  /* branch (two payment paths) */
+  .branch{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;}
+  .subcard{border:1px solid var(--line); border-radius:14px; padding:14px 16px; background:var(--ivory);}
+  .subcard .price{font-size:22px; font-weight:800; color:var(--spruce);}
+  .subcard .ptag{font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--teal);}
+  .subcard p{margin:8px 0 0; font-size:12.5px; color:var(--muted);}
+
+  .arrow-note{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; font-weight:600; margin:2px 0 2px 74px; padding:4px 0;}
+  .arrow-note::before{content:"↓"; font-size:15px; color:var(--coral);}
+
+  /* lifecycle footer box */
+  .lifecycle{margin-top:14px; background:var(--spruce); color:var(--ivory); border-radius:18px; padding:24px 26px; box-shadow:var(--shadow-lg);}
+  .lifecycle h3{margin:0 0 6px; color:#fff; font-size:18px;}
+  .lifecycle p{margin:0; color:rgba(251,248,241,.8); font-size:14px;}
+  .lifecycle .lc-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;}
+  .lc-item{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:14px 16px;}
+  .lc-item .lt{font-weight:800; font-size:14px; color:var(--honey);}
+  .lc-item .ld{font-size:12.5px; color:rgba(251,248,241,.78); margin-top:5px;}
+
+  .foot{margin-top:46px; padding-top:20px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+
+  @media (max-width:720px){
+    .ladder{grid-template-columns:1fr 1fr;}
+    .branch,.lifecycle .lc-grid{grid-template-columns:1fr;}
+    .mast h1{font-size:34px;}
+  }
+  @media print{
+    body{background:#fff;}
+    .stage,.card,.lifecycle{break-inside:avoid;}
+    .mast{margin-bottom:24px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="mast-inner">
+    <div class="brandbars">
+      <span style="background:var(--coral)"></span>
+      <span style="background:var(--sage)"></span>
+      <span style="background:var(--honey)"></span>
+    </div>
+    <p class="eyebrow">The Glow Room · Product Walkthrough</p>
+    <h1>How a member moves through the product</h1>
+    <p class="sub">A step-by-step map of the full journey — from landing on the site to checking in
+      every day — and exactly what each person can access at each stage. Read it top to bottom; access
+      widens as they go.</p>
+    <p class="meta">Prepared for the business owner · reflects the live build (Next.js app + Stripe + Discord) · June 2026</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ACCESS LADDER -->
+  <p class="section-label">The four access tiers (who can do what)</p>
+  <div class="ladder">
+    <div class="tier t-public">
+      <div class="tnum">Tier 0</div>
+      <div class="tname">Visitor</div>
+      <div class="tdesc">Anyone on the internet. Sees the marketing site only. No login.</div>
+    </div>
+    <div class="tier t-auth">
+      <div class="tnum">Tier 1</div>
+      <div class="tname">Account holder</div>
+      <div class="tdesc">Signed up but hasn't paid. Can reach the join/checkout page — nothing else.</div>
+    </div>
+    <div class="tier t-member">
+      <div class="tnum">Tier 2</div>
+      <div class="tname">Paying member</div>
+      <div class="tdesc">Enrolled in a cohort. Full app: daily check-ins, streak, leaderboard, badges.</div>
+    </div>
+    <div class="tier t-discord">
+      <div class="tnum">Tier 3</div>
+      <div class="tname">Community member</div>
+      <div class="tdesc">Verified in Discord with the Member role. Access to the members-only community.</div>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <p class="section-label">How to read the steps</p>
+  <div class="legend">
+    <span class="li"><span class="chiptype ct-public">Public</span> open to anyone</span>
+    <span class="li"><span class="chiptype ct-page">Secure page</span> login required</span>
+    <span class="li"><span class="chiptype ct-gate">Gate</span> a checkpoint that blocks/redirects</span>
+    <span class="li"><span class="chiptype ct-api">Action</span> a button / payment step</span>
+    <span class="li"><span class="chiptype ct-bg">Behind the scenes</span> automatic, no user action</span>
+    <span class="li"><span class="chiptype ct-discord">Discord</span> happens in the community server</span>
+  </div>
+
+  <!-- FLOW -->
+  <p class="section-label">The journey, step by step</p>
+  <div class="flow">
+
+    <!-- 1. LANDING -->
+    <div class="stage public">
+      <div class="marker">1</div>
+      <div class="card accent-spruce">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>Discover the Glow Room</h3>
+            <span class="chiptype ct-public">Public</span>
+            <span class="route">/</span>
+          </div>
+          <p class="what">The marketing landing page. Explains the promise — a <span class="hl">30-day glow up you
+            actually finish, together</span> — and the four pillars (Movement, Skin, Mindset, Habit Anchor).
+            Shows the cohort start dates (Jan 1 · Apr 1 · Jul 1 · Oct 1). Two buttons, both lead to login:
+            “Enter the Glow Room” and “Sign in.”</p>
+          <div class="unlocks">
+            <div class="ul-label">⬚ What they can access here</div>
+            <div class="chips">
+              <span class="chip have"><span class="dot"></span>Marketing &amp; pillar info</span>
+              <span class="chip have"><span class="dot"></span>Cohort schedule</span>
+              <span class="chip locked"><span class="dot"></span>Everything else is locked</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">Clicks “Enter the Glow Room”</div>
+
+    <!-- 2. LOGIN -->
+    <div class="stage">
+      <div class="marker">2</div>
+      <div class="card accent-coral">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>Create an account (or sign in)</h3>
+            <span class="chiptype ct-public">Public</span>
+            <span class="route">/login</span>
+          </div>
+          <p class="what">Email + password — no waiting on a confirmation email. New accounts are created
+            <span class="hl">already-confirmed</span>, so they can sign in immediately. “Continue with Google”
+            is available too. This is where a visitor becomes a <b>Tier&nbsp;1 account holder</b>.</p>
+          <div class="unlocks">
+            <div class="ul-label">⬚ Newly unlocked</div>
+            <div class="chips">
+              <span class="chip have"><span class="dot"></span>A logged-in session</span>
+              <span class="chip gate"><span class="dot"></span>Can now reach the Join page</span>
+              <span class="chip locked"><span class="dot"></span>Dashboard still blocked — no cohort yet</span>
+            </div>
+          </div>
+          <div class="note"><b>Gate:</b> the app’s session guard protects every <span class="route" style="font-size:11px">/dashboard</span>
+            route. A logged-out person is bounced back here.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">Goes to join a cohort</div>
+
+    <!-- 3. JOIN / CHOOSE -->
+    <div class="stage">
+      <div class="marker">3</div>
+      <div class="card accent-honey">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>Choose how to join</h3>
+            <span class="chiptype ct-page">Secure page</span>
+            <span class="chiptype ct-gate">Gate</span>
+            <span class="route">/join</span>
+          </div>
+          <p class="what">Must be logged in to see this. They pick one of two paths:</p>
+          <div class="branch">
+            <div class="subcard">
+              <div class="ptag">One-time</div>
+              <div class="price">$18</div>
+              <p>A single Glow Up cohort (30 days). One payment, done.</p>
+            </div>
+            <div class="subcard">
+              <div class="ptag">Membership</div>
+              <div class="price">$9<span style="font-size:13px; color:var(--muted)">/mo</span></div>
+              <p>The Glow Room Monthly — all cohorts, monthly drops, members-only channel.</p>
+            </div>
+          </div>
+          <div class="note">Test mode uses card <b>4242&nbsp;4242&nbsp;4242&nbsp;4242</b>, any future expiry &amp; CVC.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">Clicks “Join” / “Subscribe”</div>
+
+    <!-- 4. CHECKOUT -->
+    <div class="stage">
+      <div class="marker">4</div>
+      <div class="card accent-coral">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>Pay on Stripe</h3>
+            <span class="chiptype ct-api">Action</span>
+            <span class="route">/api/checkout → Stripe</span>
+          </div>
+          <p class="what">The app hands off to <span class="hl">Stripe’s secure hosted checkout</span> — the
+            card form lives on Stripe, never on our site. The session quietly carries who they are and which
+            cohort, so we can finish the job after payment. On success Stripe sends them to the welcome page.</p>
+          <div class="unlocks">
+            <div class="ul-label">⬚ State after paying</div>
+            <div class="chips">
+              <span class="chip have"><span class="dot"></span>Payment captured by Stripe</span>
+              <span class="chip gate"><span class="dot"></span>Provisioning kicks off automatically →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">Stripe notifies our server (webhook)</div>
+
+    <!-- 5. PROVISIONING (BG) -->
+    <div class="stage bg">
+      <div class="marker">5</div>
+      <div class="card accent-teal">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>Account is provisioned automatically</h3>
+            <span class="chiptype ct-bg">Behind the scenes</span>
+            <span class="route">/api/webhooks/stripe</span>
+          </div>
+          <p class="what">The member does nothing here — this all happens server-side the moment payment
+            confirms. On <span class="hl">checkout.session.completed</span> the system:</p>
+          <div class="chips" style="margin-top:12px">
+            <span class="chip have"><span class="dot"></span>Creates the cohort <b style="margin:0 2px">enrollment</b></span>
+            <span class="chip have"><span class="dot"></span>Generates a <b style="margin:0 2px">single-use access code</b></span>
+            <span class="chip have"><span class="dot"></span>Emails the code (Resend)</span>
+            <span class="chip have"><span class="dot"></span>Membership → records the subscription</span>
+          </div>
+          <div class="note">Built to be safe: it’s <b>idempotent</b> (won’t double-enroll if Stripe retries),
+            and a refund or chargeback later automatically <b>revokes</b> access and removes the Discord role.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">Member lands on the welcome screen</div>
+
+    <!-- 6. WELCOME -->
+    <div class="stage">
+      <div class="marker">6</div>
+      <div class="card accent-sage">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>“You’re in!” — get the code</h3>
+            <span class="chiptype ct-page">Secure page</span>
+            <span class="route">/welcome</span>
+          </div>
+          <p class="what">Confirms payment and shows their <span class="hl">single-use Discord code</span> with
+            instructions: join Discord, go to <b>#verify</b>, run <span class="route" style="font-size:11px">/verify code:GLW-…</span>.
+            They’re now a <b>Tier&nbsp;2 paying member</b> — the dashboard is unlocked.</p>
+          <div class="unlocks">
+            <div class="ul-label">⬚ Newly unlocked</div>
+            <div class="chips">
+              <span class="chip have"><span class="dot"></span>Full dashboard access</span>
+              <span class="chip have"><span class="dot"></span>Their Discord verify code</span>
+              <span class="chip gate"><span class="dot"></span>Community still needs the verify step →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">Takes the code into Discord</div>
+
+    <!-- 7. DISCORD VERIFY -->
+    <div class="stage discord">
+      <div class="marker">7</div>
+      <div class="card accent-discord">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>Verify in the Discord community</h3>
+            <span class="chiptype ct-discord">Discord</span>
+            <span class="route">/verify · bot → /api/discord/redeem</span>
+          </div>
+          <p class="what">In the server’s <b>#verify</b> channel they run the slash command with their code.
+            The bot checks it against our API, <span class="hl">burns the code so it can’t be reused</span>,
+            links their Discord account to their membership, and grants the <b>Member role</b>. This is the
+            step that just promoted you to Server Member. ✅</p>
+          <div class="unlocks">
+            <div class="ul-label">⬚ Newly unlocked — now Tier 3</div>
+            <div class="chips">
+              <span class="chip have"><span class="dot"></span>Member-only channels</span>
+              <span class="chip have"><span class="dot"></span>The cohort community</span>
+              <span class="chip locked"><span class="dot"></span>Code is now spent (one use only)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">First visit to the dashboard</div>
+
+    <!-- 8. INTAKE -->
+    <div class="stage">
+      <div class="marker">8</div>
+      <div class="card accent-honey">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>One-time setup: pick a habit anchor</h3>
+            <span class="chiptype ct-page">Secure page</span>
+            <span class="chiptype ct-gate">Gate</span>
+            <span class="route">/dashboard/intake</span>
+          </div>
+          <p class="what">Before Day 1, the dashboard makes them choose their <span class="hl">habit anchor</span> —
+            one small non-negotiable they’ll repeat every day (make my bed, 2 L water, read 10 pages, go
+            outside, or their own). It’s the metronome the whole challenge plays against. They can’t reach the
+            dashboard until this is set; once chosen, it’s skipped forever.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-note">Anchor locked in — enters the daily loop</div>
+
+    <!-- 9. DASHBOARD / DAILY LOOP -->
+    <div class="stage">
+      <div class="marker">9</div>
+      <div class="card accent-spruce">
+        <div class="card-pad">
+          <div class="card-head">
+            <h3>The daily loop — the core product</h3>
+            <span class="chiptype ct-page">Secure page</span>
+            <span class="route">/dashboard</span>
+          </div>
+          <p class="what">Home base for a paying member. Shows their <span class="hl">streak</span>, days complete,
+            today’s day number, a progress bar, and a 30-day grid. Everything a member uses day to day lives here:</p>
+          <div class="unlocks">
+            <div class="ul-label">⬚ Full member access</div>
+            <div class="chips">
+              <span class="chip have"><span class="dot"></span>Daily check-in · <span class="route" style="font-size:11px">/dashboard/day/[n]</span></span>
+              <span class="chip have"><span class="dot"></span>Leaderboard · <span class="route" style="font-size:11px">/dashboard/leaderboard</span></span>
+              <span class="chip have"><span class="dot"></span>Collectible badges</span>
+              <span class="chip have"><span class="dot"></span>30-day progress grid</span>
+              <span class="chip have"><span class="dot"></span>Manage billing · <span class="route" style="font-size:11px">/api/portal</span></span>
+            </div>
+          </div>
+
+          <div class="unlocks">
+            <div class="ul-label">↳ Inside a daily check-in</div>
+            <p class="what" style="margin-top:2px">Tick the four pillars — <b>Movement, Skin, Mindset, Habit
+              Anchor</b> — add optional notes, and upload a private progress photo. A day only counts as
+              “complete” when all of its pillars are done. Completing days builds the streak and badges.</p>
+          </div>
+
+          <div class="note"><b>Anti-cheat by design:</b> days unlock one at a time at midnight — you can’t pre-fill
+            the whole challenge to jump the leaderboard. This is enforced in the database, so it holds even
+            against someone poking the API directly. The leaderboard only ever exposes a name and counts.</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /flow -->
+
+  <!-- BADGES / MILESTONES strip -->
+  <p class="section-label">Milestones that keep them coming back</p>
+  <div class="legend" style="gap:10px">
+    <span class="chip have"><span class="dot"></span>★ First Day</span>
+    <span class="chip have"><span class="dot"></span>★ 7-Day Streak</span>
+    <span class="chip have"><span class="dot"></span>★ Halfway (Day 15)</span>
+    <span class="chip have"><span class="dot"></span>★ Challenge Complete</span>
+    <span style="font-size:12.5px; color:var(--muted); align-self:center">Auto-awarded as they progress — a collector mechanic that rewards consistency.</span>
+  </div>
+
+  <!-- LIFECYCLE / EDGE CASES -->
+  <p class="section-label">What happens after — keeping access honest</p>
+  <div class="lifecycle">
+    <h3>Access can also be taken away — automatically</h3>
+    <p>The same webhook that grants access also protects the business if a payment is reversed or a
+      subscription ends. No manual cleanup required.</p>
+    <div class="lc-grid">
+      <div class="lc-item">
+        <div class="lt">Refund or chargeback</div>
+        <div class="ld">The cohort enrollment is revoked and the Discord Member role is removed — they lose
+          app and community access.</div>
+      </div>
+      <div class="lc-item">
+        <div class="lt">Membership cancelled</div>
+        <div class="ld">When the subscription ends in Stripe, the subscription is marked cancelled and the
+          Discord role is removed.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>The Glow Room — user flow &amp; access map</span>
+    <span>Tier 0 Visitor → Tier 1 Account → Tier 2 Member → Tier 3 Community</span>
+  </div>
+
+</div>
+</body>
+</html>

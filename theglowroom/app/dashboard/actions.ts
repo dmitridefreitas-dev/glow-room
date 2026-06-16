@@ -22,6 +22,39 @@ export async function saveIntake(formData: FormData) {
   redirect("/dashboard");
 }
 
+/** Update editable profile fields (currently the public display name). */
+export async function updateProfile(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const displayName = String(formData.get("display_name") ?? "").trim();
+  if (!displayName) {
+    redirect("/dashboard/settings?error=" + encodeURIComponent("Enter a name."));
+  }
+  if (displayName.length > 40) {
+    redirect(
+      "/dashboard/settings?error=" +
+        encodeURIComponent("Keep it under 40 characters.")
+    );
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update({ display_name: displayName })
+    .eq("id", user.id);
+
+  if (error) {
+    redirect("/dashboard/settings?error=" + encodeURIComponent(error.message));
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/leaderboard");
+  redirect("/dashboard/settings?saved=1");
+}
+
 /** Save (insert or update) a day's check-in, including an optional photo. */
 export async function saveCheckIn(formData: FormData) {
   const supabase = await createClient();
@@ -35,6 +68,16 @@ export async function saveCheckIn(formData: FormData) {
 
   const day = Number(formData.get("day_number"));
   if (!Number.isInteger(day)) redirect("/dashboard");
+
+  // The cohort hasn't started yet — nothing is checkable until launch day.
+  if (!enrollment.started) {
+    redirect(
+      `/dashboard/day/${day}?error=` +
+        encodeURIComponent(
+          "Your cohort hasn't started yet — Day 1 unlocks on launch day."
+        )
+    );
+  }
 
   // Anti-cheat: you can only check in for days that have unlocked. The DB
   // trigger enforces this too; this gives a friendly message before we try.

@@ -23,16 +23,26 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle();
 
+  // No recurring subscription → nothing to manage (e.g. one-time cohort buyers).
   if (!sub?.stripe_customer_id) {
-    return NextResponse.redirect(new URL("/dashboard", request.url), {
-      status: 303,
-    });
+    return NextResponse.redirect(
+      new URL("/dashboard/settings?billing=none", request.url),
+      { status: 303 }
+    );
   }
 
   const origin = new URL(request.url).origin;
-  const session = await stripe.billingPortal.sessions.create({
-    customer: sub.stripe_customer_id,
-    return_url: `${origin}/dashboard`,
-  });
-  return NextResponse.redirect(session.url, { status: 303 });
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: sub.stripe_customer_id,
+      return_url: `${origin}/dashboard`,
+    });
+    return NextResponse.redirect(session.url, { status: 303 });
+  } catch {
+    // Most common in test mode: the Customer Portal hasn't been activated yet.
+    return NextResponse.redirect(
+      new URL("/dashboard/settings?billing=error", request.url),
+      { status: 303 }
+    );
+  }
 }

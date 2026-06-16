@@ -1,5 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import {
+  Lock,
+  Footprints,
+  Sparkles,
+  Brain,
+  Anchor,
+  ArrowLeft,
+  ArrowRight,
+  type LucideIcon,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEnrollmentForUser } from "@/lib/cohort";
@@ -11,6 +21,7 @@ type Pillar = {
   label: string;
   task: string;
   accent: string;
+  Icon: LucideIcon;
 };
 
 export default async function DayPage({
@@ -67,7 +78,7 @@ export default async function DayPage({
     savedPhotoUrl = signed?.signedUrl ?? null;
   }
 
-  const isFuture = day > enrollment.currentDay;
+  const isFuture = !enrollment.started || day > enrollment.currentDay;
   const tasks = totalTasks(enrollment.challengeType);
   const done = doneCount(existing ?? undefined, enrollment.challengeType);
 
@@ -89,6 +100,7 @@ export default async function DayPage({
       label: "Movement",
       task: content.movement_task,
       accent: "bg-coral",
+      Icon: Footprints,
     });
   if (content?.skin_task)
     pillars.push({
@@ -96,6 +108,7 @@ export default async function DayPage({
       label: "Skin",
       task: content.skin_task,
       accent: "bg-teal",
+      Icon: Sparkles,
     });
   if (content?.mindset_prompt)
     pillars.push({
@@ -103,12 +116,14 @@ export default async function DayPage({
       label: "Mindset",
       task: content.mindset_prompt,
       accent: "bg-honey",
+      Icon: Brain,
     });
   pillars.push({
     key: "anchor_done",
     label: "Habit anchor",
     task: profile?.habit_anchor ?? "Your daily anchor",
     accent: "bg-sage",
+    Icon: Anchor,
   });
 
   return (
@@ -154,8 +169,10 @@ export default async function DayPage({
 
       {isFuture ? (
         <div className="mt-6 rounded-2xl border border-line bg-white p-8 text-center">
-          <div className="text-4xl">🔒</div>
-          <h2 className="mt-3 text-lg font-bold text-spruce">
+          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-ivory text-muted">
+            <Lock className="h-6 w-6" />
+          </span>
+          <h2 className="mt-4 text-lg font-bold text-spruce">
             Day {day} is locked
           </h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
@@ -163,12 +180,21 @@ export default async function DayPage({
             midnight — you can&apos;t skip ahead. That&apos;s what keeps the
             challenge honest and the leaderboard fair.
           </p>
-          <Link
-            href={`/dashboard/day/${enrollment.currentDay}`}
-            className="mt-5 inline-block rounded-xl bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90"
-          >
-            Go to today — Day {enrollment.currentDay}
-          </Link>
+          {enrollment.started ? (
+            <Link
+              href={`/dashboard/day/${enrollment.currentDay}`}
+              className="mt-5 inline-block rounded-xl bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90"
+            >
+              Go to today — Day {enrollment.currentDay}
+            </Link>
+          ) : (
+            <Link
+              href="/dashboard"
+              className="mt-5 inline-block rounded-xl bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90"
+            >
+              Back to countdown
+            </Link>
+          )}
         </div>
       ) : (
       <form action={saveCheckIn} className="mt-6 space-y-4">
@@ -184,11 +210,15 @@ export default async function DayPage({
                 className="mt-1 h-5 w-5 accent-coral"
               />
               <div className="flex-1">
-                <span className={`block h-1 w-8 rounded ${p.accent}`} />
-                <h2 className="mt-2 text-sm font-bold uppercase tracking-wide text-spruce">
+                <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-spruce">
+                  <span
+                    className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-white ${p.accent}`}
+                  >
+                    <p.Icon className="h-4 w-4" strokeWidth={2.4} />
+                  </span>
                   {p.label}
                 </h2>
-                <p className="mt-1 text-sm text-ink">{p.task}</p>
+                <p className="mt-1.5 text-sm text-ink">{p.task}</p>
 
                 {p.key === "movement_done" && (
                   <input
@@ -247,21 +277,21 @@ export default async function DayPage({
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex gap-3 text-sm">
+          <div className="flex gap-2 text-sm">
             {day > 1 && (
               <Link
                 href={`/dashboard/day/${day - 1}`}
-                className="font-semibold text-teal"
+                className="inline-flex items-center gap-1 rounded-lg px-3 py-2.5 font-semibold text-teal transition hover:bg-teal-light"
               >
-                ← Day {day - 1}
+                <ArrowLeft className="h-4 w-4" /> Day {day - 1}
               </Link>
             )}
             {day < enrollment.totalDays && (
               <Link
                 href={`/dashboard/day/${day + 1}`}
-                className="font-semibold text-teal"
+                className="inline-flex items-center gap-1 rounded-lg px-3 py-2.5 font-semibold text-teal transition hover:bg-teal-light"
               >
-                Day {day + 1} →
+                Day {day + 1} <ArrowRight className="h-4 w-4" />
               </Link>
             )}
           </div>

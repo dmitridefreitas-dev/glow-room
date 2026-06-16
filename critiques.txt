@@ -1,0 +1,83 @@
+================================================================================
+THE GLOW ROOM — UI / UX / PRODUCT CRITIQUES
+================================================================================
+A running log of design & product critiques. Newest batches at the bottom.
+Convention: every time a critique is identified (by Claude or the owner), it gets
+appended here with a status tag:
+  [ ] open      [~] in progress      [x] done      [-] won't do / deferred
+================================================================================
+
+
+## 2026-06-15 — Senior design review (full UI pass)
+
+### Brand identity & atmosphere
+[x] 1. System fonts (-apple-system / Segoe UI) read as "unfinished web app," not a
+       $18 premium product. HIGHEST leverage. Fix: pair a characterful DISPLAY
+       face with a clean BODY face (display is where personality lives).
+       -> Implemented: Bricolage Grotesque (display) + Inter (body) via next/font.
+[x] 2. Zero imagery — a glow-up product with no faces, texture, or motion. Needs
+       warmth/humans. Landing needs a hero graphic + testimonial faces; the four
+       pillar cards are flat color rectangles with a 1px bar and need real icons.
+       -> Implemented: SVG "glow bloom" hero graphic; Lucide icons on pillars;
+          testimonial strip with avatar placeholders (swap for real ones).
+[x] 3. Emoji-as-icons (lock, trophy, medal, sprout, rain, magnifier) render
+       differently per device and read casual/placeholder. Swap to a real icon
+       set (Lucide). Keep emoji only where intentionally playful (welcome white
+       heart). -> Implemented: Lucide across app; kept welcome heart.
+
+### Landing
+[x] 4. No social proof anywhere. Add testimonial strip + "X members glowing up" /
+       cohort-size number — for a "do it together" product, proof of TOGETHER is
+       the conversion lever.
+[x] 5. Section rhythm is monotonous (every section = rounded card on ivory). Vary
+       backgrounds; add one or two full-bleed moments.
+
+### Login
+[x] 6. "Sign in" (coral) and "Create account" (outline) are near-equal weight; a
+       first-timer hesitates. Most traffic is NEW — make account-creation the
+       visual primary.
+[x] 7. Success banner still says "Check your email to confirm" but accounts are
+       auto-confirmed now. Stale/confusing copy. Fix the message.
+[x] 8. Google button + "enable it in Supabase" caveat looks unfinished to an end
+       user. Hide it until it actually works (env flag).
+
+### Dashboard
+[x] 9. "Card soup": stats, progress, today, leaderboard, badges, day grid — all
+       same radius/elevation, stacked. Nothing says "look here first." Give the
+       Today check-in clear primary hierarchy; demote the rest.
+[x] 10. The 30-day grid is the signature/screenshot-worthy visual but it's a
+        footnote at the bottom. Make it a hero element.
+[x] 11. Progress bar is a thin 3px line; a habit product should make progress feel
+        substantial.
+
+### Day check-in
+[x] 12. No emotion on completion. Ticking the 4th pillar should feel like a win —
+        confetti, the day cell flipping green with a spring, a streak tick-up.
+        Currently just a redirect + text toast.
+
+### Strategic (growth via design)
+[x] 13. Members come from TikTok/IG and the thesis is "together." Highest-value UI
+        work = designing SHAREABLE, screenshot-worthy moments (badge unlocks,
+        streak milestones, "Day 30 complete" card) with branding baked in — that
+        turns UI polish into a free acquisition loop.
+        -> Implemented: share-ready achievement card + Day-30 celebration state.
+
+### Quick wins / hygiene
+[x] 14. Focus states: inputs have focus:border-teal but buttons/links rely on
+        default outlines. Add visible focus-visible rings (keyboard + a11y).
+[x] 15. Tap targets: several actions are text-xs links (settings, billing, prev/
+        next day). Bump to ~44px touch targets for mobile (the core device).
+[x] 16. Contrast: --muted #6e726b on ivory is borderline for small text. Nudge
+        darker. -> #565a52.
+[x] 17. Motion: essentially none. Add a few well-placed transitions (card hover,
+        number count-ups on stats, page) for cheap perceived quality.
+
+### Follow-ups opened during this work (to revisit)
+[ ] 18. Testimonials are placeholder sample quotes with initial avatars — replace
+        with real member quotes + photos before launch.
+[ ] 19. Hero graphic is an on-brand SVG, not photography — consider real editorial
+        photography once brand shoot exists.
+[x] 20. Shareable cards render on-screen for screenshotting; a generated OG/share
+        image endpoint (server-rendered PNG) would be a stronger growth loop.
+        -> SHIPPED 2026-06-15 (RECOMMENDATIONS.md R1): /api/share-image PNG +
+           /s/[token] link preview + "Post to my story" button.

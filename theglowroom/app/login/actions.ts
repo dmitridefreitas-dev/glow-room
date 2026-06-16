@@ -1,9 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recordReferral } from "@/lib/referral";
 
 function originFrom(host: string | null): string {
   return host ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -87,6 +88,18 @@ export async function signUpWithPassword(formData: FormData) {
         )
     );
   }
+
+  // Referral attribution (R2): if they arrived via /r/<code>, credit the referrer.
+  const jar = await cookies();
+  const refCode = jar.get("gr_ref")?.value;
+  if (refCode) {
+    const {
+      data: { user: newUser },
+    } = await supabase.auth.getUser();
+    if (newUser) await recordReferral(newUser.id, refCode);
+    jar.delete("gr_ref");
+  }
+
   redirect("/dashboard");
 }
 

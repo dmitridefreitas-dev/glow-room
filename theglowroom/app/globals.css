@@ -14,18 +14,123 @@
   --color-sage-light: #e4f0e7;
   --color-ivory: #fbf8f1;
   --color-ink: #22302c;
-  --color-muted: #6e726b;
+  --color-muted: #565a52;
   --color-line: #e3ddd0;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  /* Inter for body, Bricolage Grotesque for display — loaded via next/font in
+     app/layout.tsx, which sets --font-inter / --font-bricolage. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-inter), ui-sans-serif,
+    system-ui, sans-serif;
 }
 
 :root {
   color-scheme: light;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--color-ivory);
   color: var(--color-ink);
+}
+
+/* Headlines get the display face; small uppercase labels keep their tracking. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+/* Visible, on-brand keyboard focus for interactive elements (a11y). */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-pop {
+  animation: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ---- Purposeful motion (R8): tier emblem + streak flame ---- */
+/* Sheen sweeps quickly across, then holds off-screen, so it reads as a distinct
+   periodic "shine" rather than a constant (unnoticeable) drift. */
+@keyframes tier-sheen-move {
+  0% {
+    transform: translateX(-160%) skewX(-20deg);
+  }
+  28% {
+    transform: translateX(260%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(260%) skewX(-20deg);
+  }
+}
+@keyframes tier-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.06);
+  }
+}
+@keyframes flame-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgba(224, 162, 60, 0.55));
+    transform: scale(1) rotate(-1deg);
+  }
+  50% {
+    filter: drop-shadow(0 0 11px rgba(226, 120, 90, 0.95));
+    transform: scale(1.14) rotate(1deg);
+  }
+}
+.tier-glow {
+  animation: tier-breathe 3.4s ease-in-out infinite;
+}
+.tier-sheen {
+  animation: tier-sheen-move 3.6s ease-in-out infinite;
+}
+.tier-sheen-fast {
+  animation: tier-sheen-move 2.6s ease-in-out infinite;
+}
+.flame-glow {
+  animation: flame-glow 1.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

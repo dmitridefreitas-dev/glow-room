@@ -30,8 +30,7 @@ export default async function LoginPage({
 
         {sp.check && (
           <div className="mt-5 rounded-xl bg-sage-light px-4 py-3 text-sm text-spruce">
-            ✓ Account created. Check your email to confirm, then sign in. (If
-            confirmation is turned off, just sign in below.)
+            ✓ Account created — you&apos;re all set. Sign in below to continue.
           </div>
         )}
         {sp.error && (
@@ -77,41 +76,41 @@ export default async function LoginPage({
             />
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="submit"
-              formAction={signInWithPassword}
-              className="flex-1 rounded-xl bg-coral px-4 py-3 text-sm font-semibold text-white transition hover:bg-coral/90"
-            >
-              Sign in
-            </button>
+          <div className="space-y-2.5 pt-1">
             <button
               type="submit"
               formAction={signUpWithPassword}
-              className="flex-1 rounded-xl border border-spruce bg-white px-4 py-3 text-sm font-semibold text-spruce transition hover:bg-ivory"
+              className="w-full rounded-xl bg-coral px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-coral/90"
             >
-              Create account
+              Create my account
+            </button>
+            <button
+              type="submit"
+              formAction={signInWithPassword}
+              className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-spruce transition hover:border-spruce hover:bg-ivory"
+            >
+              I already have an account — sign in
             </button>
           </div>
         </form>
 
-        <div className="my-5 flex items-center gap-3 text-xs text-muted">
-          <span className="h-px flex-1 bg-line" />
-          or
-          <span className="h-px flex-1 bg-line" />
-        </div>
-
-        <form action={signInWithGoogle}>
-          <button
-            type="submit"
-            className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-ivory"
-          >
-            Continue with Google
-          </button>
-        </form>
-        <p className="mt-2 text-center text-[11px] text-muted">
-          Google works once you enable it in Supabase → Auth → Providers.
-        </p>
+        {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
+          <>
+            <div className="my-5 flex items-center gap-3 text-xs text-muted">
+              <span className="h-px flex-1 bg-line" />
+              or
+              <span className="h-px flex-1 bg-line" />
+            </div>
+            <form action={signInWithGoogle}>
+              <button
+                type="submit"
+                className="w-full rounded-xl border border-line bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:bg-ivory"
+              >
+                Continue with Google
+              </button>
+            </form>
+          </>
+        )}
 
         <p className="mt-6 text-center text-xs text-muted">
           Members only — access is gated to paying cohort members.

@@ -1,8 +1,31 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  Flame,
+  Trophy,
+  Lock,
+  Star,
+  Settings,
+  CreditCard,
+  ArrowRight,
+  Check,
+  Sparkles,
+  PartyPopper,
+  Sprout,
+  Users,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getEnrollmentForUser } from "@/lib/cohort";
 import { syncBadges } from "@/lib/badges";
+import { CountUp } from "@/components/CountUp";
+import { Celebrate } from "@/components/Celebrate";
+import { ShareCard } from "@/components/ShareCard";
+import { ShareWinButton } from "@/components/ShareWinButton";
+import { InvitePanel } from "@/components/InvitePanel";
+import { buildShareImageUrl, encodeToken } from "@/lib/share-token";
+import { getReferralStats } from "@/lib/referral";
+import { scoreFor, tierProgress } from "@/lib/points";
+import { TierEmblem } from "@/components/Tier";
 import {
   type CheckInRow,
   dayComplete,
@@ -30,15 +53,79 @@ export default async function DashboardPage({
 
   if (!profile?.habit_anchor) redirect("/dashboard/intake");
 
+  const name = profile.display_name ?? user!.email?.split("@")[0] ?? "friend";
+
   const enrollment = await getEnrollmentForUser(user!.id);
   if (!enrollment) {
     return (
-      <div>
-        <h1 className="text-2xl font-extrabold text-spruce">No active cohort</h1>
+      <div className="mx-auto max-w-lg text-center">
+        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-sage-light text-sage">
+          <Sprout className="h-7 w-7" />
+        </span>
+        <h1 className="mt-4 text-2xl font-extrabold text-spruce">
+          You&apos;re not in a cohort yet
+        </h1>
         <p className="mt-2 text-muted">
-          You&apos;re not enrolled in a cohort yet. Enrolment opens with each
-          launch (Jan / Apr / Jul / Oct).
+          Everyone starts together on launch day — Jan 1 · Apr 1 · Jul 1 · Oct 1.
+          Grab your spot in the next one and we&apos;ll save your place.
         </p>
+        <Link
+          href="/join"
+          className="mt-6 inline-block rounded-xl bg-coral px-6 py-3 text-sm font-semibold text-white transition hover:bg-coral/90"
+        >
+          See cohorts &amp; join →
+        </Link>
+      </div>
+    );
+  }
+
+  // Pre-cohort: the user has paid but the challenge hasn't started yet.
+  if (!enrollment.started) {
+    const startLabel = enrollment.startDate
+      ? new Date(`${enrollment.startDate}T00:00:00Z`).toLocaleDateString(
+          undefined,
+          { weekday: "long", month: "long", day: "numeric" }
+        )
+      : "soon";
+    const d = enrollment.daysUntilStart;
+    return (
+      <div className="mx-auto max-w-lg text-center">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">
+          {enrollment.cohortName ?? "Your cohort"}
+        </p>
+        <h1 className="mt-2 text-3xl font-extrabold text-spruce">
+          You&apos;re in, {name} 🎉
+        </h1>
+        <p className="mt-2 text-muted">
+          The Glow Up Challenge begins <strong>{startLabel}</strong>. Everyone
+          starts Day&nbsp;1 together — that&apos;s the whole point.
+        </p>
+
+        <div className="mt-7 rounded-3xl bg-spruce px-6 py-10 text-ivory">
+          <div className="text-6xl font-extrabold tracking-tight">{d}</div>
+          <div className="mt-1 text-sm uppercase tracking-[0.15em] text-ivory/70">
+            {d === 1 ? "day to go" : "days to go"}
+          </div>
+        </div>
+
+        {profile.habit_anchor && (
+          <p className="mt-5 text-sm text-muted">
+            Your habit anchor is locked in:{" "}
+            <strong className="text-spruce">{profile.habit_anchor}</strong>.
+            Start it today — a head start never hurts.
+          </p>
+        )}
+
+        <div className="mt-6 rounded-2xl border border-line bg-white p-5 text-left">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-spruce">
+            While you wait
+          </h2>
+          <ul className="mt-2 space-y-1.5 text-sm text-muted">
+            <li>· Make sure you&apos;ve verified in Discord so you&apos;re in the cohort channel.</li>
+            <li>· Tell a friend to join — doing it together is how you finish.</li>
+            <li>· On launch day, Day 1 unlocks here automatically.</li>
+          </ul>
+        </div>
       </div>
     );
   }
@@ -64,7 +151,6 @@ export default async function DashboardPage({
     else break;
   }
 
-  const name = profile.display_name ?? user!.email?.split("@")[0] ?? "friend";
   const pct = Math.round((completed / total) * 100);
 
   // Award + fetch collectible badges.
@@ -75,6 +161,42 @@ export default async function DashboardPage({
   const todayCheckIn = byDay.get(today);
   const todayDone = doneCount(todayCheckIn, type);
   const todayComplete = dayComplete(todayCheckIn, type);
+
+  const challengeComplete = completed === total;
+  const earnedBadges = badges.filter((b) => b.earned);
+  const latestBadge = earnedBadges.at(-1)?.label;
+
+  // Points + tier (R7): score climbs on completed days, drops on missed ones.
+  // Same formula the cohort/crew leaderboards use, so the numbers always match.
+  const score = scoreFor(completed, today);
+  const rank = tierProgress(score);
+
+  // Referral (R2) — defensive: null until the 0004 migration is applied.
+  const { code: refCode, count: refCount, recruiter } = await getReferralStats(
+    user!.id
+  );
+
+  // Signed, snapshot share assets (public PNG + link-preview page).
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const referralLink = refCode ? `${appUrl}/r/${refCode}` : null;
+  const sharePayload = {
+    name,
+    streak,
+    completed,
+    total,
+    badge: latestBadge,
+    link: referralLink ?? undefined,
+    tier: rank.current.label,
+  };
+  const storyImageUrl = buildShareImageUrl(appUrl, sharePayload, "story");
+  const shareLink = `${appUrl}/s/${encodeToken(sharePayload)}`;
+  const inviteImageUrl = referralLink
+    ? buildShareImageUrl(appUrl, sharePayload, "invite")
+    : null;
+  const cohortInviteLink = refCode
+    ? `${appUrl}/r/${refCode}?c=${enrollment.cohortId}`
+    : null;
+  const winCaption = `${streak}-day streak on my 30-day glow up 🌿 ${shareLink}`;
 
   // Smart save toast
   let toast: { ok: boolean; text: string } | null = null;
@@ -94,104 +216,277 @@ export default async function DashboardPage({
 
   return (
     <div>
+      {/* Confetti when a day was just completed, or the whole challenge is done. */}
+      <Celebrate fire={Boolean(toast?.ok) || challengeComplete} big={challengeComplete} />
+
       {toast && (
         <div
-          className={`mb-5 rounded-xl px-4 py-3 text-sm font-medium text-spruce ${
+          className={`mb-5 rounded-xl px-4 py-3 ${
             toast.ok ? "bg-sage-light" : "bg-honey-light"
           }`}
         >
-          {toast.ok ? "✓ " : ""}
-          {toast.text}
+          <p className="text-sm font-medium text-spruce">
+            {toast.ok ? "✓ " : ""}
+            {toast.text}
+          </p>
+          {toast.ok && (
+            <div className="mt-2.5">
+              <ShareWinButton imageUrl={storyImageUrl} caption={winCaption} />
+            </div>
+          )}
         </div>
       )}
 
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">
         Glow Up Challenge
       </p>
-      <h1 className="mt-2 text-3xl font-extrabold text-spruce">
-        Hey {name} 👋
-      </h1>
+      <h1 className="mt-2 text-3xl font-extrabold text-spruce">Hey {name} 👋</h1>
       <p className="mt-1 text-sm text-muted">
         Anchor: <strong>{profile.habit_anchor}</strong> · every day, no excuses.
       </p>
 
-      {/* Stats */}
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      {/* ── PRIMARY: today's check-in (or the finish-line celebration) ── */}
+      {challengeComplete ? (
+        <div className="mt-6 overflow-hidden rounded-3xl bg-gradient-to-br from-spruce to-spruce-dark p-7 text-ivory">
+          <PartyPopper className="h-9 w-9 text-honey" />
+          <h2 className="mt-3 text-2xl font-extrabold">
+            You finished all {total} days. 🤍
+          </h2>
+          <p className="mt-1 text-sm text-ivory/80">
+            You did the whole thing — and you did it on time, every time. Share it
+            and start your next glow up.
+          </p>
+          <div className="mt-4">
+            <ShareWinButton
+              imageUrl={storyImageUrl}
+              caption={`I finished a 30-day glow up 🤍 ${shareLink}`}
+              label="Share my finish"
+              tone="dark"
+            />
+          </div>
+        </div>
+      ) : (
+        <Link
+          href={`/dashboard/day/${today}`}
+          className="group mt-6 block rounded-3xl bg-gradient-to-br from-spruce to-spruce-dark p-7 text-ivory shadow-lg transition hover:brightness-110"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ivory/70">
+              {todayComplete
+                ? "Done for today"
+                : `Today · ${todayDone} of ${tasksPerDay} tasks done`}
+            </span>
+            {todayComplete && <Check className="h-5 w-5 text-sage" />}
+          </div>
+          <div className="mt-2 font-display text-3xl font-extrabold">
+            Day {today} check-in
+          </div>
+          <div className="mt-4 flex gap-1.5">
+            {Array.from({ length: tasksPerDay }, (_, i) => (
+              <span
+                key={i}
+                className={`h-2 flex-1 rounded transition-all ${
+                  i < todayDone ? "bg-honey" : "bg-ivory/20"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-coral px-5 py-2.5 text-sm font-semibold text-white transition group-hover:gap-3">
+            {todayComplete ? "Review today" : "Start today's check-in"}
+            <ArrowRight className="h-4 w-4" />
+          </span>
+        </Link>
+      )}
+
+      {/* Stats + thick progress (supporting context) */}
+      <div className="mt-5 grid grid-cols-3 gap-3">
         <div className="rounded-2xl bg-coral-light p-4 text-center">
-          <div className="text-3xl font-extrabold text-spruce">{streak}</div>
-          <div className="text-[11px] uppercase tracking-wide text-muted">
+          <div className="flex items-center justify-center gap-1.5 text-spruce">
+            <Flame className="flame-glow h-5 w-5 text-coral" strokeWidth={2.4} />
+            <CountUp value={streak} className="font-display text-3xl font-extrabold" />
+          </div>
+          <div className="mt-0.5 text-[11px] uppercase tracking-wide text-muted">
             Day streak
           </div>
         </div>
         <div className="rounded-2xl bg-teal-light p-4 text-center">
-          <div className="text-3xl font-extrabold text-spruce">
-            {completed}
+          <div className="text-spruce">
+            <CountUp value={completed} className="font-display text-3xl font-extrabold" />
             <span className="text-base text-muted">/{total}</span>
           </div>
-          <div className="text-[11px] uppercase tracking-wide text-muted">
+          <div className="mt-0.5 text-[11px] uppercase tracking-wide text-muted">
             Days complete
           </div>
         </div>
         <div className="rounded-2xl bg-honey-light p-4 text-center">
-          <div className="text-3xl font-extrabold text-spruce">{today}</div>
-          <div className="text-[11px] uppercase tracking-wide text-muted">
+          <CountUp
+            value={today}
+            className="font-display text-3xl font-extrabold text-spruce"
+          />
+          <div className="mt-0.5 text-[11px] uppercase tracking-wide text-muted">
             Today is day
           </div>
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="mt-5">
-        <div className="h-3 w-full overflow-hidden rounded-full bg-line">
+        <div className="flex items-end justify-between">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Challenge progress
+          </span>
+          <span className="font-display text-sm font-bold text-spruce">{pct}%</span>
+        </div>
+        <div className="mt-1.5 h-5 w-full overflow-hidden rounded-full bg-line">
           <div
-            className="h-full rounded-full bg-sage transition-all"
+            className="h-full rounded-full bg-gradient-to-r from-sage to-teal transition-all"
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="mt-1 text-xs text-muted">
-          {pct}% of the challenge complete.
+      </div>
+
+      {/* ── RANK: points + tier ladder (R7) — the trophy count ── */}
+      <div className="mt-5 flex items-center gap-5 rounded-3xl bg-gradient-to-br from-spruce to-spruce-dark p-6 text-ivory">
+        <TierEmblem tier={rank.current} size={84} animated />
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-bold uppercase tracking-[0.15em] text-ivory/65">
+            Your rank · {rank.current.label}
+          </div>
+          <div className="mt-0.5 flex items-baseline gap-2">
+            <CountUp
+              value={score}
+              className="font-display text-5xl font-extrabold leading-none"
+            />
+            <span className="text-base font-semibold text-ivory/70">pts</span>
+          </div>
+          {rank.next ? (
+            <div className="mt-2.5">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-ivory/15">
+                <div
+                  className="h-full rounded-full bg-honey transition-all"
+                  style={{ width: `${rank.pct}%` }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-ivory/70">
+                {rank.toGo} pts to <strong className="text-ivory">{rank.next.label}</strong>
+              </p>
+            </div>
+          ) : (
+            <p className="mt-1.5 text-xs font-semibold text-honey">
+              Top tier — you&apos;re a Champion. 👑
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* ── HERO VISUAL: the 30-day grid ── */}
+      <div className="mt-9 flex items-center justify-between">
+        <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-teal">
+          Your {total} days
+        </h2>
+        <span className="text-[11px] text-muted">Screenshot-worthy 👀</span>
+      </div>
+      <div className="mt-3 rounded-3xl border border-line bg-white p-4 shadow-sm sm:p-5">
+        <div className="grid grid-cols-6 gap-2 sm:grid-cols-10 sm:gap-2.5">
+          {Array.from({ length: total }, (_, i) => i + 1).map((d) => {
+            const c = byDay.get(d);
+            const locked = d > today;
+            const isComplete = dayComplete(c, type);
+            const cls = isComplete
+              ? "bg-sage text-white"
+              : dayStarted(c, type)
+                ? "bg-honey-light text-spruce"
+                : locked
+                  ? "bg-ivory text-muted"
+                  : "bg-white text-muted";
+            const ring =
+              d === today ? "ring-2 ring-coral" : "border border-line";
+            const pop = d === today && isComplete ? "animate-pop" : "";
+            return (
+              <Link
+                key={d}
+                href={`/dashboard/day/${d}`}
+                className={`relative flex aspect-square items-center justify-center rounded-xl text-sm font-bold transition hover:scale-[1.06] ${cls} ${ring} ${pop}`}
+              >
+                {locked ? (
+                  <>
+                    <span className="opacity-50">{d}</span>
+                    <Lock className="absolute right-1 top-1 h-3 w-3 opacity-60" />
+                  </>
+                ) : (
+                  d
+                )}
+              </Link>
+            );
+          })}
+        </div>
+        <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-sage" /> complete
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-honey" /> started
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Lock className="h-3 w-3" /> unlocks at midnight
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full ring-2 ring-coral" /> today
+          </span>
         </p>
       </div>
 
-      {/* Today CTA with task progress */}
-      <Link
-        href={`/dashboard/day/${today}`}
-        className="mt-6 flex items-center justify-between rounded-2xl bg-spruce px-6 py-5 text-ivory transition hover:bg-spruce-dark"
-      >
-        <div>
-          <div className="text-xs uppercase tracking-wide text-ivory/70">
-            {todayComplete
-              ? "Done for today ✓"
-              : `Today · ${todayDone} of ${tasksPerDay} tasks done`}
-          </div>
-          <div className="text-lg font-bold">Day {today} check-in</div>
-          {/* mini task dots */}
-          <div className="mt-2 flex gap-1.5">
-            {Array.from({ length: tasksPerDay }, (_, i) => (
-              <span
-                key={i}
-                className={`h-1.5 w-8 rounded ${
-                  i < todayDone ? "bg-honey" : "bg-ivory/25"
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-        <span className="text-2xl">→</span>
-      </Link>
+      {/* Share card — built to be posted */}
+      <h2 className="mt-9 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.15em] text-teal">
+        <Sparkles className="h-4 w-4" /> Show off your streak
+      </h2>
+      <div className="mt-3">
+        <ShareCard
+          name={name}
+          streak={streak}
+          completed={completed}
+          total={total}
+          latestBadge={latestBadge}
+          storyImageUrl={storyImageUrl}
+          shareLink={shareLink}
+        />
+      </div>
 
-      {/* Leaderboard link */}
+      {/* Leaderboard */}
       <Link
         href="/dashboard/leaderboard"
-        className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-white px-6 py-4 transition hover:border-teal"
+        className="mt-6 flex items-center justify-between rounded-2xl border border-line bg-white px-6 py-4 transition hover:border-teal"
       >
-        <div>
-          <div className="font-bold text-spruce">🏆 Leaderboard</div>
-          <div className="text-xs text-muted">
-            See how you rank against the cohort.
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-honey-light text-honey">
+            <Trophy className="h-5 w-5" />
+          </span>
+          <div>
+            <div className="font-bold text-spruce">Leaderboard</div>
+            <div className="text-xs text-muted">
+              See how you rank against the cohort.
+            </div>
           </div>
         </div>
-        <span className="text-xl text-teal">→</span>
+        <ArrowRight className="h-5 w-5 text-teal" />
+      </Link>
+
+      {/* Your crew (R6) */}
+      <Link
+        href="/dashboard/squad"
+        className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-white px-6 py-4 transition hover:border-teal"
+      >
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-light text-sage">
+            <Users className="h-5 w-5" />
+          </span>
+          <div>
+            <div className="font-bold text-spruce">Your crew</div>
+            <div className="text-xs text-muted">
+              Glow up with a persistent squad — and climb the crew leaderboard.
+            </div>
+          </div>
+        </div>
+        <ArrowRight className="h-5 w-5 text-teal" />
       </Link>
 
       {/* Badges */}
@@ -202,71 +497,57 @@ export default async function DashboardPage({
         {badges.map((b) => (
           <span
             key={b.key}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
               b.earned
                 ? "bg-honey-light text-spruce"
-                : "border border-line bg-white text-line"
+                : "border border-line bg-white text-muted"
             }`}
           >
-            {b.earned ? "★" : "🔒"} {b.label}
+            {b.earned ? (
+              <Star className="h-3.5 w-3.5 fill-honey text-honey" />
+            ) : (
+              <Lock className="h-3.5 w-3.5" />
+            )}
+            {b.label}
           </span>
         ))}
       </div>
 
-      {/* Day grid */}
-      <h2 className="mt-8 text-sm font-bold uppercase tracking-[0.15em] text-teal">
-        All {total} days
-      </h2>
-      <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-10">
-        {Array.from({ length: total }, (_, i) => i + 1).map((d) => {
-          const c = byDay.get(d);
-          const locked = d > today;
-          const cls = dayComplete(c, type)
-            ? "bg-sage text-white"
-            : dayStarted(c, type)
-              ? "bg-honey-light text-spruce"
-              : locked
-                ? "bg-ivory text-muted"
-                : "bg-white text-muted";
-          const ring =
-            d === today ? "ring-2 ring-coral" : "border border-line";
-          return (
-            <Link
-              key={d}
-              href={`/dashboard/day/${d}`}
-              className={`relative flex aspect-square items-center justify-center rounded-xl text-sm font-bold ${cls} ${ring}`}
-            >
-              {locked ? (
-                <>
-                  <span className="opacity-50">{d}</span>
-                  <span className="absolute right-0.5 top-0.5 text-sm leading-none">
-                    🔒
-                  </span>
-                </>
-              ) : (
-                d
-              )}
-            </Link>
-          );
-        })}
-      </div>
-      <p className="mt-3 text-xs text-muted">
-        <span className="inline-block h-2 w-2 rounded-full bg-sage align-middle" />{" "}
-        complete ·{" "}
-        <span className="inline-block h-2 w-2 rounded-full bg-honey align-middle" />{" "}
-        started · 🔒 locked (unlocks at midnight) · ring = today
-      </p>
+      {/* Invite & earn (R2/R3/R5) — secondary growth action, kept near the bottom */}
+      {referralLink && inviteImageUrl && cohortInviteLink && (
+        <div className="mt-9">
+          <InvitePanel
+            referralLink={referralLink}
+            inviteImageUrl={inviteImageUrl}
+            cohortInviteLink={cohortInviteLink}
+            count={refCount}
+            recruiter={recruiter}
+          />
+        </div>
+      )}
 
       {/* Account links */}
-      <div className="mt-8 flex flex-wrap gap-4 border-t border-line pt-5 text-xs text-muted">
-        <Link href="/join" className="font-semibold text-teal">
-          Join a cohort / membership →
+      <div className="mt-9 flex flex-wrap gap-3 border-t border-line pt-5">
+        <Link
+          href="/join"
+          className="inline-flex items-center gap-2 rounded-xl bg-ivory px-4 py-2.5 text-sm font-semibold text-teal transition hover:bg-teal-light"
+        >
+          <Sparkles className="h-4 w-4" /> Join a cohort / membership
         </Link>
         <form action="/api/portal" method="post">
-          <button type="submit" className="font-semibold text-teal">
-            Manage billing →
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-xl bg-ivory px-4 py-2.5 text-sm font-semibold text-teal transition hover:bg-teal-light"
+          >
+            <CreditCard className="h-4 w-4" /> Manage billing
           </button>
         </form>
+        <Link
+          href="/dashboard/settings"
+          className="inline-flex items-center gap-2 rounded-xl bg-ivory px-4 py-2.5 text-sm font-semibold text-teal transition hover:bg-teal-light"
+        >
+          <Settings className="h-4 w-4" /> Settings
+        </Link>
       </div>
     </div>
   );
