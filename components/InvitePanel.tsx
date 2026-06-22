@@ -25,14 +25,23 @@ export function InvitePanel({
   count: number;
   recruiter: boolean;
 }) {
-  const [copied, setCopied] = useState<"link" | "crew" | null>(null);
+  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
-  const shortLink = referralLink.replace(/^https?:\/\//, "");
 
-  async function copy(which: "link" | "crew", value: string, event: string) {
-    if (await copyText(value, event)) {
-      setCopied(which);
-      setTimeout(() => setCopied(null), 1800);
+  // The featured link in the box: the crew join link if they're in a crew,
+  // otherwise their personal referral link.
+  const inCrew = Boolean(crewInviteLink);
+  const featuredLink = crewInviteLink ?? referralLink;
+  const featuredShort = featuredLink.replace(/^https?:\/\//, "");
+
+  async function copyFeatured() {
+    const ok = await copyText(
+      featuredLink,
+      inCrew ? "crew_invite_copied" : "referral_link_copied"
+    );
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
     }
   }
 
@@ -50,16 +59,16 @@ export function InvitePanel({
         </div>
       </div>
 
-      {/* Referral link */}
+      {/* Featured link — crew join link when in a crew, else the referral link */}
       <div className="mt-5 flex items-center gap-2 rounded-xl border border-line bg-ivory px-3 py-2.5">
         <span className="flex-1 truncate text-sm font-medium text-spruce">
-          {shortLink}
+          {featuredShort}
         </span>
         <button
-          onClick={() => copy("link", referralLink, "referral_link_copied")}
+          onClick={copyFeatured}
           className="inline-flex items-center gap-1.5 rounded-lg bg-spruce px-3 py-1.5 text-xs font-semibold text-ivory transition hover:bg-spruce-dark"
         >
-          {copied === "link" ? (
+          {copied ? (
             <>
               <Check className="h-3.5 w-3.5" /> Copied
             </>
@@ -70,6 +79,11 @@ export function InvitePanel({
           )}
         </button>
       </div>
+      <p className="mt-1.5 text-xs text-muted">
+        {inCrew
+          ? "Your crew link — friends open it and join your crew from their dashboard."
+          : "Your invite link — anyone who joins with it is credited to you."}
+      </p>
 
       {/* Actions */}
       <div className="mt-3 flex flex-wrap gap-2">
@@ -89,22 +103,7 @@ export function InvitePanel({
           <UserPlus className="h-4 w-4" />
           {busy ? "Preparing…" : "Invite a friend"}
         </button>
-        {crewInviteLink ? (
-          <button
-            onClick={() => copy("crew", crewInviteLink, "crew_invite_copied")}
-            className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-teal transition hover:border-teal"
-          >
-            {copied === "crew" ? (
-              <>
-                <Check className="h-4 w-4 text-sage" /> Crew link copied
-              </>
-            ) : (
-              <>
-                <Copy className="h-4 w-4" /> Invite to my crew
-              </>
-            )}
-          </button>
-        ) : (
+        {!inCrew && (
           <Link
             href="/dashboard/squad"
             className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-teal transition hover:border-teal"

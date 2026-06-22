@@ -130,6 +130,10 @@ solo cohort (a friend can't "join" your personal challenge). Rewired it to the
   (`/dashboard/squad?code=<inviteCode>`), the same link the crew page shares.
 - **If you're not** → the button becomes **"Start a crew to invite"** and takes you
   to the create-a-crew page (`/dashboard/squad`).
+- **The featured link box now reflects the crew link too** (it used to always show
+  the `/r/<code>` referral link). When you're in a crew, the box shows + copies the
+  crew join link; otherwise it shows your referral link. A caption under it says
+  which one it is. (Folded the now-redundant separate crew button into the box.)
 - Relabeled "cohort" → **"crew"** to match the rest of the app (the squad pages and
   the dashboard "Your crew" card all say crew). "Invite a friend" (the referral
   QR-card share) is unchanged — that one already worked.
