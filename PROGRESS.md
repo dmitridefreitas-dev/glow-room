@@ -121,6 +121,48 @@ turned OFF** (see the box below). `npm run build` passes clean.
 
 ---
 
+## 2026-06-21 — Fix: Stripe checkout infinite loop + purchase now self-provisions
+**What:** Fixed the production bug where paying (test card `4242…`, then the
+**6-digit `000000`** prompt) got stuck in an infinite loop and never completed.
+- **Root cause:** that 6-digit code is **Stripe Link's** SMS verification, not
+  3-D Secure (`4242…` never triggers 3DS). With `payment_method_types` unset,
+  Checkout used the dashboard's automatic methods (which include Link); because
+  we prefill `customer_email`, Link immediately demanded its OTP and looped in
+  the browser / in-app webview.
+- **Fix:** pin Checkout to **card only** — `payment_method_types: ["card"]` on
+  both the cohort and membership sessions (`app/api/checkout/route.ts`). This
+  removes Link and the whole 6-digit step; the card → expiry → CVC → pay flow now
+  completes straight through. (Optional belt-and-braces: also turn Link off in
+  the Stripe Dashboard → Settings → Payments.)
+- **Also fixed (the next blocker after the loop):** the production Stripe webhook
+  isn't set up yet (Phase 6), so a completed purchase had nothing to provision
+  the enrollment/access code — `/welcome` would sit on "Finalising…" forever.
+  `/welcome` now **self-heals**: it verifies the `session_id` with Stripe and, if
+  the session is **paid** and belongs to the signed-in user, provisions directly.
+  Provisioning logic was extracted to `lib/provision.ts`
+  (`provisionFromCheckoutSession`) and is shared by **both** the webhook and
+  `/welcome`, so they can't drift. It's **idempotent** (skips if already enrolled)
+  and safe (only acts on a paid session owned by the current user).
+- **Files:** `app/api/checkout/route.ts`, `app/welcome/page.tsx`,
+  `app/api/webhooks/stripe/route.ts`, `lib/provision.ts` (new). `npm run build`
+  passes clean.
+
+> **Still recommended for go-live (config, not code):** create the **production
+> Stripe webhook** (`https://<your-domain>/api/webhooks/stripe`, events
+> `checkout.session.completed`, `customer.subscription.deleted`,
+> `charge.refunded`, `charge.dispute.created`) and set `STRIPE_WEBHOOK_SECRET` +
+> all other env vars in Vercel. The `/welcome` fallback covers the *grant-access*
+> path, but **revoke on refund/chargeback/cancel still needs the live webhook**.
+> Also set `NEXT_PUBLIC_APP_URL` to the real domain.
+
+> **Known follow-up (not fixed here — needs a product decision):** a **monthly
+> membership** purchase creates a `subscriptions` row but **no cohort enrollment
+> or Discord access code**, so a subscriber lands on the empty dashboard. Decide
+> which cohort a member auto-joins (e.g. the next upcoming one) before charging
+> for memberships, then extend `provisionFromCheckoutSession`.
+
+---
+
 ## 2026-06-15 — Phase 9 (progression): points + tier ladder (R7)
 **What:** A points score + the **Bronze → Silver → Gold → Platinum → Diamond →
 Champion** ladder with **graphic hexagon emblems**. Metal/gem names = instantly

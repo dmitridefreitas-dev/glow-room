@@ -17,6 +17,12 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
 
   const common = {
+    // Card only. Leaving this unset lets Checkout fall back to the dashboard's
+    // automatic payment methods, which include Stripe Link — and because we
+    // prefill customer_email, Link immediately demands its 6-digit SMS
+    // verification (test code 000000) and gets stuck in a loop in many browsers
+    // / in-app webviews. Pinning to "card" removes Link and that whole step.
+    payment_method_types: ["card" as const],
     customer_email: user.email ?? undefined,
     success_url: `${origin}/welcome?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/join`,

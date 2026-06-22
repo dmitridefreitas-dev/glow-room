@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { stripe, type Stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createAccessCode } from "@/lib/access-codes";
-import { sendAccessEmail } from "@/lib/email";
+import { provisionFromCheckoutSession } from "@/lib/provision";
 import { removeMemberRole } from "@/lib/discord";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -36,46 +33,7 @@ export async function POST(request: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const s = event.data.object as Stripe.Checkout.Session;
-      const meta = s.metadata ?? {};
-
-      if (meta.kind === "cohort" && meta.user_id && meta.cohort_id) {
-        // Idempotency: skip if this user already has an enrollment in the cohort.
-        const { data: existing } = await admin
-          .from("enrollments")
-          .select("id")
-          .eq("user_id", meta.user_id)
-          .eq("cohort_id", meta.cohort_id)
-          .maybeSingle();
-
-        if (!existing) {
-          const { data: enr } = await admin
-            .from("enrollments")
-            .insert({
-              user_id: meta.user_id,
-              cohort_id: meta.cohort_id,
-              stripe_session_id: s.id,
-              status: "active",
-            })
-            .select("id")
-            .single();
-
-          if (enr) {
-            const code = await createAccessCode(meta.user_id, enr.id);
-            const email = s.customer_details?.email ?? s.customer_email;
-            if (email) await sendAccessEmail(email, code, APP_URL);
-          }
-        }
-      } else if (meta.kind === "membership" && meta.user_id) {
-        await admin.from("subscriptions").upsert(
-          {
-            user_id: meta.user_id,
-            stripe_customer_id: s.customer ? String(s.customer) : null,
-            stripe_sub_id: s.subscription ? String(s.subscription) : null,
-            status: "active",
-          },
-          { onConflict: "stripe_sub_id" }
-        );
-      }
+      await provisionFromCheckoutSession(s);
       break;
     }
 

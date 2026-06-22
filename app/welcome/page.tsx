@@ -2,20 +2,41 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { stripe } from "@/lib/stripe";
+import { provisionFromCheckoutSession } from "@/lib/provision";
 
 export default async function WelcomePage({
   searchParams,
 }: {
   searchParams: Promise<{ session_id?: string }>;
 }) {
-  await searchParams; // session_id is for reference; provisioning is webhook-driven
+  const { session_id } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // The webhook creates the access code. Fetch the most recent one for this user.
+  // Provisioning is normally webhook-driven, but fall back to provisioning from
+  // the (verified, paid) checkout session here so a purchase still grants access
+  // even if the production webhook isn't configured yet or is delayed. Safe:
+  // idempotent, and we only act on a paid session that belongs to this user.
+  if (session_id) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      if (
+        session.payment_status === "paid" &&
+        session.metadata?.user_id === user.id
+      ) {
+        await provisionFromCheckoutSession(session);
+      }
+    } catch {
+      // Bad/unknown session id, or Stripe unavailable — the webhook (if set up)
+      // will still provision, and the code shows once it lands.
+    }
+  }
+
+  // Fetch the most recent access code for this user (set by either path above).
   const admin = createAdminClient();
   const { data: code } = await admin
     .from("access_codes")
