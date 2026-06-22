@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -32,10 +33,11 @@ export default async function JoinPage({
           ← Dashboard
         </Link>
         <h1 className="mt-3 text-3xl font-extrabold text-spruce">
-          Join a cohort
+          Join The Glow Room
         </h1>
         <p className="mt-1 text-muted">
-          Everyone starts on the same day and moves through the 30 days together.
+          Get instant access to the 30-day Glow Up Challenge, your private
+          dashboard, and the members-only Discord. Pick a plan to start today.
         </p>
 
         {sp.error && (
@@ -87,26 +89,47 @@ export default async function JoinPage({
         <h2 className="mt-10 text-sm font-bold uppercase tracking-[0.15em] text-teal">
           Or go monthly
         </h2>
-        <form
-          action="/api/checkout"
-          method="post"
-          className="mt-3 flex items-center justify-between rounded-2xl bg-spruce p-6 text-ivory"
-        >
-          <input type="hidden" name="kind" value="membership" />
-          <div>
-            <div className="font-bold">The Glow Room Monthly</div>
-            <div className="text-xs text-ivory/70">
-              All four cohorts a year, monthly drops, members-only channel.
+        <div className="mt-3 rounded-2xl bg-spruce p-6 text-ivory">
+          <div className="flex items-baseline justify-between gap-4">
+            <div className="text-lg font-bold">The Glow Room Monthly</div>
+            <div className="shrink-0">
+              <span className="text-2xl font-extrabold">$9</span>
+              <span className="text-sm text-ivory/70">/mo</span>
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={!membershipEnabled}
-            className="rounded-xl bg-honey px-5 py-2.5 text-sm font-semibold text-spruce transition hover:bg-honey/90 disabled:opacity-50"
-          >
-            Subscribe — $9/mo
-          </button>
-        </form>
+          <p className="mt-1 text-sm text-ivory/80">
+            Ongoing access to everything The Glow Room — cancel anytime. You start
+            today; your 30 days are unlocked right away.
+          </p>
+          <ul className="mt-4 space-y-2 text-sm text-ivory/90">
+            {[
+              "The full 30-day Glow Up Challenge + your private dashboard",
+              "Members-only Discord community",
+              "All four seasonal cohorts a year — do it “together” whenever you like",
+              "New monthly drops, challenges & streak rewards",
+            ].map((feature) => (
+              <li key={feature} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-honey" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+          <form action="/api/checkout" method="post" className="mt-5">
+            <input type="hidden" name="kind" value="membership" />
+            <button
+              type="submit"
+              disabled={!membershipEnabled}
+              className="w-full rounded-xl bg-honey px-5 py-3 text-sm font-semibold text-spruce transition hover:bg-honey/90 disabled:opacity-50"
+            >
+              Subscribe — $9/mo
+            </button>
+          </form>
+          {!membershipEnabled && (
+            <p className="mt-2 text-xs text-ivory/60">
+              Membership isn&apos;t configured yet (set STRIPE_MEMBERSHIP_PRICE_ID).
+            </p>
+          )}
+        </div>
 
         <p className="mt-6 text-xs text-muted">
           Test mode — use card <code>4242 4242 4242 4242</code>, any future expiry

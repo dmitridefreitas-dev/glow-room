@@ -11,7 +11,6 @@ import {
   Check,
   Sparkles,
   PartyPopper,
-  Sprout,
   Users,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -57,26 +56,10 @@ export default async function DashboardPage({
 
   const enrollment = await getEnrollmentForUser(user!.id);
   if (!enrollment) {
-    return (
-      <div className="mx-auto max-w-lg text-center">
-        <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-sage-light text-sage">
-          <Sprout className="h-7 w-7" />
-        </span>
-        <h1 className="mt-4 text-2xl font-extrabold text-spruce">
-          You&apos;re not in a cohort yet
-        </h1>
-        <p className="mt-2 text-muted">
-          Everyone starts together on launch day — Jan 1 · Apr 1 · Jul 1 · Oct 1.
-          Grab your spot in the next one and we&apos;ll save your place.
-        </p>
-        <Link
-          href="/join"
-          className="mt-6 inline-block rounded-xl bg-coral px-6 py-3 text-sm font-semibold text-white transition hover:bg-coral/90"
-        >
-          See cohorts &amp; join →
-        </Link>
-      </div>
-    );
+    // No access yet → go straight to the join / membership page. (No dead-end
+    // "you're not in a cohort yet" screen.) Paying provisions an enrollment, so
+    // paid members never bounce back here.
+    redirect("/join");
   }
 
   // Pre-cohort: the user has paid but the challenge hasn't started yet.

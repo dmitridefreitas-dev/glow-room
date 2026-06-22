@@ -121,6 +121,38 @@ turned OFF** (see the box below). `npm run build` passes clean.
 
 ---
 
+## 2026-06-21 — Access model: no "not in a cohort" dead-end; membership grants access
+**What:** Reworked what a logged-in member sees so paying = instant access, and
+**cohort selection is decoupled from payment** (you join a cohort later, from the
+dashboard — it's the social/competitive layer, not the paywall).
+- **Killed the "You're not in a cohort yet" screen.** A logged-in user with no
+  access now goes **straight to `/join`** (the plans page) instead of a dead-end.
+  `app/dashboard/page.tsx` redirects when there's no enrollment.
+- **Membership now actually grants access (and can't loop).** Previously a $9/mo
+  subscriber got a `subscriptions` row but **no enrollment or Discord code**, so
+  they'd bounce back to `/join` forever. Membership checkout now also provisions a
+  **personal, self-paced Glow Up enrollment + single-use Discord code**, so the
+  member lands in the dashboard with their 30 days unlocked from their join date.
+  New `ensureSoloEnrollment()` in `lib/provision.ts` (idempotent; the backing
+  cohort has no `stripe_price_id`, so it never appears in the purchasable list).
+- **`/join` reframed** from "Join a cohort" to "Join The Glow Room" and the
+  **monthly plan now explains what you get** (challenge + dashboard, Discord, all
+  four seasonal cohorts, monthly drops) with a clear price + feature list.
+- **Files:** `app/dashboard/page.tsx`, `app/join/page.tsx`, `lib/provision.ts`.
+  **No DB migration.** `npm run build` passes clean.
+
+> **Why this is loop-safe:** every paid path (one-time **and** membership) now
+> creates an enrollment, so a paid member never bounces back to `/join`; only
+> users who genuinely haven't paid are sent there.
+
+> **Known follow-up (not done — bigger change):** the **one-time $18** is still
+> tied to a *specific purchasable cohort* at checkout (you pick one on `/join`).
+> Fully decoupling it — a standalone "$18 access" Stripe price + an in-dashboard
+> "join a cohort" action for the seasonal/competitive layer — is the natural next
+> step now that membership is decoupled. Say the word and I'll wire it.
+
+---
+
 ## 2026-06-21 — Fix: Stripe checkout infinite loop + purchase now self-provisions
 **What:** Fixed the production bug where paying (test card `4242…`, then the
 **6-digit `000000`** prompt) got stuck in an infinite loop and never completed.
