@@ -121,6 +121,23 @@ turned OFF** (see the box below). `npm run build` passes clean.
 
 ---
 
+## 2026-06-21 — Fix: "Invite to my crew" points at the crew (was a dead personal-cohort link)
+**What:** The dashboard InvitePanel's "Invite to my cohort" button copied
+`/r/<code>?c=<personalCohortId>` — meaningless now that each member has their own
+solo cohort (a friend can't "join" your personal challenge). Rewired it to the
+**crew** (the group you actually create + invite to):
+- **If you're in a crew** → the button copies your **crew join link**
+  (`/dashboard/squad?code=<inviteCode>`), the same link the crew page shares.
+- **If you're not** → the button becomes **"Start a crew to invite"** and takes you
+  to the create-a-crew page (`/dashboard/squad`).
+- Relabeled "cohort" → **"crew"** to match the rest of the app (the squad pages and
+  the dashboard "Your crew" card all say crew). "Invite a friend" (the referral
+  QR-card share) is unchanged — that one already worked.
+- **Files:** `app/dashboard/page.tsx`, `components/InvitePanel.tsx`. **No DB
+  migration.** Build passes clean.
+
+---
+
 ## 2026-06-21 — Fix: invite/share links 404 in production (were built with localhost)
 **What:** The cohort invite link (and every referral / squad / share / OG link)
 was built from `NEXT_PUBLIC_APP_URL`, which defaults to **`http://localhost:3000`**.

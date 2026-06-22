@@ -26,6 +26,7 @@ import { ShareWinButton } from "@/components/ShareWinButton";
 import { InvitePanel } from "@/components/InvitePanel";
 import { buildShareImageUrl, encodeToken } from "@/lib/share-token";
 import { getReferralStats } from "@/lib/referral";
+import { getMySquad } from "@/lib/squads";
 import { scoreFor, tierProgress } from "@/lib/points";
 import { TierEmblem } from "@/components/Tier";
 import {
@@ -215,8 +216,11 @@ export default async function DashboardPage({
   const inviteImageUrl = referralLink
     ? buildShareImageUrl(appUrl, sharePayload, "invite")
     : null;
-  const cohortInviteLink = refCode
-    ? `${appUrl}/r/${refCode}?c=${enrollment.cohortId}`
+  // "Invite to my crew" → if they're in a crew, share its join link; otherwise the
+  // button sends them to create one (handled in InvitePanel via crewInviteLink=null).
+  const squad = await getMySquad(user!.id);
+  const crewInviteLink = squad
+    ? `${appUrl}/dashboard/squad?code=${squad.inviteCode}`
     : null;
   const winCaption = `${streak}-day streak on my 30-day glow up 🌿 ${shareLink}`;
 
@@ -618,12 +622,12 @@ export default async function DashboardPage({
       </div>
 
       {/* Invite & earn (R2/R3/R5) — secondary growth action, kept near the bottom */}
-      {referralLink && inviteImageUrl && cohortInviteLink && (
+      {referralLink && inviteImageUrl && (
         <div className="mt-9">
           <InvitePanel
             referralLink={referralLink}
             inviteImageUrl={inviteImageUrl}
-            cohortInviteLink={cohortInviteLink}
+            crewInviteLink={crewInviteLink}
             count={refCount}
             recruiter={recruiter}
           />

@@ -1,32 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Copy, Check, UserPlus, Award } from "lucide-react";
+import Link from "next/link";
+import { Users, Copy, Check, UserPlus, Award, Plus } from "lucide-react";
 import { postImageToStory, copyText } from "./share-actions";
 
 /**
  * R2/R3/R5 — referral + invite hub. Shows the member's referral link, how many
  * friends they've brought in (+ Recruiter badge), an "Invite a friend" action
- * that posts the QR invite card, and a cohort-specific invite link.
+ * that posts the QR invite card, and a "crew" invite: if the member is in a crew
+ * it shares the crew join link; if not, it sends them to create one.
  */
 export function InvitePanel({
   referralLink,
   inviteImageUrl,
-  cohortInviteLink,
+  crewInviteLink,
   count,
   recruiter,
 }: {
   referralLink: string;
   inviteImageUrl: string;
-  cohortInviteLink: string;
+  /** The member's crew join link, or null if they haven't created/joined one. */
+  crewInviteLink: string | null;
   count: number;
   recruiter: boolean;
 }) {
-  const [copied, setCopied] = useState<"link" | "cohort" | null>(null);
+  const [copied, setCopied] = useState<"link" | "crew" | null>(null);
   const [busy, setBusy] = useState(false);
   const shortLink = referralLink.replace(/^https?:\/\//, "");
 
-  async function copy(which: "link" | "cohort", value: string, event: string) {
+  async function copy(which: "link" | "crew", value: string, event: string) {
     if (await copyText(value, event)) {
       setCopied(which);
       setTimeout(() => setCopied(null), 1800);
@@ -42,7 +45,7 @@ export function InvitePanel({
         <div>
           <h2 className="font-bold text-spruce">Invite friends, glow together</h2>
           <p className="text-xs text-muted">
-            Doing it together is how you finish. Bring a friend into your cohort.
+            Doing it together is how you finish. Bring a friend into your crew.
           </p>
         </div>
       </div>
@@ -86,20 +89,29 @@ export function InvitePanel({
           <UserPlus className="h-4 w-4" />
           {busy ? "Preparing…" : "Invite a friend"}
         </button>
-        <button
-          onClick={() => copy("cohort", cohortInviteLink, "cohort_invite_copied")}
-          className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-teal transition hover:border-teal"
-        >
-          {copied === "cohort" ? (
-            <>
-              <Check className="h-4 w-4 text-sage" /> Cohort link copied
-            </>
-          ) : (
-            <>
-              <Copy className="h-4 w-4" /> Invite to my cohort
-            </>
-          )}
-        </button>
+        {crewInviteLink ? (
+          <button
+            onClick={() => copy("crew", crewInviteLink, "crew_invite_copied")}
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-teal transition hover:border-teal"
+          >
+            {copied === "crew" ? (
+              <>
+                <Check className="h-4 w-4 text-sage" /> Crew link copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" /> Invite to my crew
+              </>
+            )}
+          </button>
+        ) : (
+          <Link
+            href="/dashboard/squad"
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-white px-4 py-2.5 text-sm font-semibold text-teal transition hover:border-teal"
+          >
+            <Plus className="h-4 w-4" /> Start a crew to invite
+          </Link>
+        )}
       </div>
 
       {/* Stats */}
