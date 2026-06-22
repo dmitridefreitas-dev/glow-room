@@ -12,8 +12,10 @@ import {
   Sparkles,
   PartyPopper,
   Users,
+  Anchor,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getEnrollmentForUser } from "@/lib/cohort";
 import { syncBadges } from "@/lib/badges";
 import { CountUp } from "@/components/CountUp";
@@ -119,14 +121,49 @@ export default async function DashboardPage({
 
   const { data: rows } = await supabase
     .from("check_ins")
-    .select("day_number, movement_done, skin_done, mindset_done, anchor_done")
+    .select(
+      "day_number, movement_done, skin_done, mindset_done, anchor_done, photo_path"
+    )
     .eq("enrollment_id", enrollment.enrollmentId);
 
   const byDay = new Map<number, CheckInRow>();
-  (rows ?? []).forEach((r) => byDay.set(r.day_number as number, r as CheckInRow));
+  const photoByDay = new Map<number, string>();
+  (rows ?? []).forEach((r) => {
+    byDay.set(r.day_number as number, r as CheckInRow);
+    if (r.photo_path) photoByDay.set(r.day_number as number, r.photo_path as string);
+  });
 
   let completed = 0;
   for (const c of byDay.values()) if (dayComplete(c, type)) completed += 1;
+
+  // Habit anchor — the daily metronome. Tracked separately from full-day
+  // completion so the one unchanging action gets its own prominence.
+  let anchorDone = 0;
+  for (const c of byDay.values()) if (c.anchor_done) anchorDone += 1;
+
+  // Before/after reveal: sign the earliest and latest day-photos (private bucket)
+  // so we can show a side-by-side. Only meaningful once there are two on
+  // different days.
+  let beforeUrl: string | null = null;
+  let afterUrl: string | null = null;
+  let beforeDay = 0;
+  let afterDay = 0;
+  const photoDayNums = [...photoByDay.keys()].sort((a, b) => a - b);
+  if (photoDayNums.length >= 2) {
+    beforeDay = photoDayNums[0];
+    afterDay = photoDayNums[photoDayNums.length - 1];
+    const admin = createAdminClient();
+    const [{ data: b }, { data: a }] = await Promise.all([
+      admin.storage
+        .from("checkin-photos")
+        .createSignedUrl(photoByDay.get(beforeDay)!, 60 * 60),
+      admin.storage
+        .from("checkin-photos")
+        .createSignedUrl(photoByDay.get(afterDay)!, 60 * 60),
+    ]);
+    beforeUrl = b?.signedUrl ?? null;
+    afterUrl = a?.signedUrl ?? null;
+  }
 
   let streak = 0;
   for (let d = 1; d <= total; d++) {
@@ -228,6 +265,18 @@ export default async function DashboardPage({
         Anchor: <strong>{profile.habit_anchor}</strong> · every day, no excuses.
       </p>
 
+      {/* Streak loss-aversion: when today isn't done yet and a streak is on the
+          line, make the cost of skipping visible. */}
+      {!challengeComplete && !todayComplete && streak >= 1 && (
+        <div className="mt-5 flex items-center gap-3 rounded-2xl border border-coral/40 bg-coral-light px-4 py-3">
+          <Flame className="h-5 w-5 shrink-0 text-coral" strokeWidth={2.4} />
+          <p className="text-sm font-medium text-spruce">
+            Your <strong>{streak}-day streak</strong> is on the line — finish Day{" "}
+            {today} to keep it alive.
+          </p>
+        </div>
+      )}
+
       {/* ── PRIMARY: today's check-in (or the finish-line celebration) ── */}
       {challengeComplete ? (
         <div className="mt-6 overflow-hidden rounded-3xl bg-gradient-to-br from-spruce to-spruce-dark p-7 text-ivory">
@@ -327,6 +376,36 @@ export default async function DashboardPage({
         </div>
       </div>
 
+      {/* ── HABIT ANCHOR: the one unchanging daily action (the metronome) ── */}
+      <div className="mt-5 rounded-3xl border border-line bg-white p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.15em] text-teal">
+            <Anchor className="h-4 w-4" /> Daily anchor
+          </h2>
+          <span className="text-xs font-semibold text-muted">
+            {anchorDone}/{total} days
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-muted">
+          <strong className="text-spruce">{profile.habit_anchor}</strong> — the one
+          thing that never changes. It&apos;s the backbone the rest is built on.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {Array.from({ length: total }, (_, i) => i + 1).map((d) => {
+            const on = Boolean(byDay.get(d)?.anchor_done);
+            return (
+              <span
+                key={d}
+                title={`Day ${d}${on ? " — done" : ""}`}
+                className={`h-3 w-3 rounded-full ${
+                  on ? "bg-sage" : d === today ? "ring-2 ring-coral" : "bg-line"
+                }`}
+              />
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── RANK: points + tier ladder (R7) — the trophy count ── */}
       <div className="mt-5 flex items-center gap-5 rounded-3xl bg-gradient-to-br from-spruce to-spruce-dark p-6 text-ivory">
         <TierEmblem tier={rank.current} size={84} animated />
@@ -417,6 +496,46 @@ export default async function DashboardPage({
           </span>
         </p>
       </div>
+
+      {/* Before / after reveal — your own most motivating (and most shareable)
+          proof. Only shows once you have photos on two different days. */}
+      {beforeUrl && afterUrl && (
+        <>
+          <h2 className="mt-9 text-sm font-bold uppercase tracking-[0.15em] text-teal">
+            Your glow up so far
+          </h2>
+          <div className="mt-3 rounded-3xl border border-line bg-white p-4 shadow-sm">
+            <div className="grid grid-cols-2 gap-3">
+              <figure>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={beforeUrl}
+                  alt={`Your Day ${beforeDay} photo`}
+                  className="aspect-square w-full rounded-xl border border-line object-cover"
+                />
+                <figcaption className="mt-1.5 text-center text-xs font-semibold uppercase tracking-wide text-muted">
+                  Day {beforeDay}
+                </figcaption>
+              </figure>
+              <figure>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={afterUrl}
+                  alt={`Your Day ${afterDay} photo`}
+                  className="aspect-square w-full rounded-xl border border-line object-cover"
+                />
+                <figcaption className="mt-1.5 text-center text-xs font-semibold uppercase tracking-wide text-spruce">
+                  Day {afterDay}
+                </figcaption>
+              </figure>
+            </div>
+            <p className="mt-3 text-center text-xs text-muted">
+              Private — only you can see these. Your Day-1-vs-now is the most
+              powerful thing you&apos;ll ever post.
+            </p>
+          </div>
+        </>
+      )}
 
       {/* Share card — built to be posted */}
       <h2 className="mt-9 flex items-center gap-2 text-sm font-bold uppercase tracking-[0.15em] text-teal">

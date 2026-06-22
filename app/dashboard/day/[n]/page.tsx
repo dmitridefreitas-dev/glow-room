@@ -167,6 +167,28 @@ export default async function DayPage({
         </div>
       )}
 
+      {!isFuture && day === 15 && (
+        <div className="mt-3 rounded-xl bg-teal-light px-4 py-3 text-sm text-spruce">
+          <strong>Halfway. 🎉</strong> This is the turning point — the part where it
+          starts to feel like who you are, not what you&apos;re forcing. Your skin&apos;s
+          about to start showing it too.
+        </div>
+      )}
+
+      {!isFuture && day === 22 && (
+        <div className="mt-3 rounded-xl bg-sage-light px-4 py-3 text-sm text-spruce">
+          <strong>Day 22 — you&apos;re past the hard part.</strong> Eight to go. It&apos;s
+          yours to lose now. Protect the streak.
+        </div>
+      )}
+
+      {!isFuture && day === enrollment.totalDays && (
+        <div className="mt-3 rounded-xl bg-honey-light px-4 py-3 text-sm text-spruce">
+          <strong>The final day.</strong> Finish it and your before &amp; after is
+          waiting. You did the whole thing — go claim it.
+        </div>
+      )}
+
       {isFuture ? (
         <div className="mt-6 rounded-2xl border border-line bg-white p-8 text-center">
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-ivory text-muted">

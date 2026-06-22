@@ -121,6 +121,36 @@ turned OFF** (see the box below). `npm run build` passes clean.
 
 ---
 
+## 2026-06-21 — Retention pass: completion celebration, occasional share, loss-aversion, arc, anchor, before/after
+**What:** Implemented the high-leverage retention misses from `AUDIT.md` for the
+**individual** (solo, self-paced) experience — friends/squads/cohorts stay optional.
+- **Day-complete celebration screen (new `/dashboard/day/[n]/done`).** Finishing a
+  day now routes to a dedicated congrats screen (confetti + streak + days-complete)
+  instead of a quiet dashboard toast. The save action (`saveCheckIn`) decides this:
+  complete → celebration; partial → dashboard toast as before.
+- **Occasional "Post to my story" (~20%, anti-spam).** The celebration screen
+  foregrounds a story-share **only ~20% of the time** (the action rolls the dice
+  and passes `?share=1`) — and **always on the final day**. The other ~80% it's just
+  congrats + Continue, so the share ask never nags.
+- **Streak loss-aversion.** Dashboard shows a "your N-day streak is on the line —
+  finish Day X" banner when today isn't done and a streak exists.
+- **Emotional arc.** Added Day 15 (halfway/turning point), Day 22 ("past the hard
+  part"), and final-day banners on the day page, alongside the existing Day 8.
+- **Habit anchor elevated.** A 30-dot "daily anchor" tracker on the dashboard,
+  separate from full-day completion — the unchanging daily action as the metronome.
+- **Before/after reveal.** A Day-1-vs-latest photo side-by-side card on the
+  dashboard (auto-appears once two day-photos exist; private signed URLs).
+- **Files:** `app/dashboard/actions.ts`, `app/dashboard/day/[n]/done/page.tsx`
+  (new), `app/dashboard/day/[n]/page.tsx`, `app/dashboard/page.tsx`. **No DB
+  migration.** `npm run build` passes clean.
+
+> **#1 retention item still open (deferred — needs external setup):** push
+> notifications + lifecycle email (the daily re-engagement trigger). Can't ship as
+> pure code — needs a PWA service worker + web-push/OneSignal, a scheduled sender
+> (cron), and a Resend verified domain. Flagged in `AUDIT.md` as the next build.
+
+---
+
 ## 2026-06-21 — Access model: no "not in a cohort" dead-end; membership grants access
 **What:** Reworked what a logged-in member sees so paying = instant access, and
 **cohort selection is decoupled from payment** (you join a cohort later, from the

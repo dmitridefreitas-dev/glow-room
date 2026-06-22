@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getEnrollmentForUser } from "@/lib/cohort";
+import { dayComplete } from "@/lib/progress";
 
 /** Save the habit-anchor chosen in the intake quiz. */
 export async function saveIntake(formData: FormData) {
@@ -90,13 +91,18 @@ export async function saveCheckIn(formData: FormData) {
     );
   }
 
+  const movement_done = formData.get("movement_done") === "on";
+  const skin_done = formData.get("skin_done") === "on";
+  const mindset_done = formData.get("mindset_done") === "on";
+  const anchor_done = formData.get("anchor_done") === "on";
+
   const payload: Record<string, unknown> = {
     enrollment_id: enrollment.enrollmentId,
     day_number: day,
-    movement_done: formData.get("movement_done") === "on",
-    skin_done: formData.get("skin_done") === "on",
-    mindset_done: formData.get("mindset_done") === "on",
-    anchor_done: formData.get("anchor_done") === "on",
+    movement_done,
+    skin_done,
+    mindset_done,
+    anchor_done,
     movement_log: String(formData.get("movement_log") ?? "").trim() || null,
     mindset_answer: String(formData.get("mindset_answer") ?? "").trim() || null,
     reflection: String(formData.get("reflection") ?? "").trim() || null,
@@ -127,5 +133,18 @@ export async function saveCheckIn(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/day/${day}`);
+
+  // Completing a day is the peak emotional moment — route it to a dedicated
+  // celebration screen. ~20% of the time that screen also invites a story share
+  // (kept occasional on purpose, so the ask never feels like spam). A partial
+  // save just returns to the dashboard with the existing progress toast.
+  const nowComplete = dayComplete(
+    { movement_done, skin_done, mindset_done, anchor_done },
+    enrollment.challengeType
+  );
+  if (nowComplete) {
+    const share = Math.random() < 0.2;
+    redirect(`/dashboard/day/${day}/done${share ? "?share=1" : ""}`);
+  }
   redirect(`/dashboard?saved=${day}`);
 }
