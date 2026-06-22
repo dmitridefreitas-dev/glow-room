@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getBaseUrl } from "@/lib/base-url";
 import { getEnrollmentForUser } from "@/lib/cohort";
 import { syncBadges } from "@/lib/badges";
 import { CountUp } from "@/components/CountUp";
@@ -196,8 +197,9 @@ export default async function DashboardPage({
     user!.id
   );
 
-  // Signed, snapshot share assets (public PNG + link-preview page).
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  // Signed, snapshot share assets (public PNG + link-preview page). Build links
+  // from the real request origin so they never point at localhost in production.
+  const appUrl = await getBaseUrl();
   const referralLink = refCode ? `${appUrl}/r/${refCode}` : null;
   const sharePayload = {
     name,

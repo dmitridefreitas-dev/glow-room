@@ -1,9 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createAccessCode } from "@/lib/access-codes";
 import { sendAccessEmail } from "@/lib/email";
+import { getBaseUrl } from "@/lib/base-url";
 import type { Stripe } from "@/lib/stripe";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -25,6 +24,7 @@ export async function provisionFromCheckoutSession(
 ): Promise<void> {
   const meta = session.metadata ?? {};
   const admin = createAdminClient();
+  const appUrl = await getBaseUrl();
 
   if (meta.kind === "cohort" && meta.user_id && meta.cohort_id) {
     // Idempotency: skip if this user already has an enrollment in the cohort.
@@ -50,7 +50,7 @@ export async function provisionFromCheckoutSession(
     if (enr) {
       const code = await createAccessCode(meta.user_id, enr.id);
       const email = session.customer_details?.email ?? session.customer_email;
-      if (email) await sendAccessEmail(email, code, APP_URL);
+      if (email) await sendAccessEmail(email, code, appUrl);
     }
   } else if (meta.kind === "membership" && meta.user_id) {
     await admin.from("subscriptions").upsert(
@@ -71,7 +71,7 @@ export async function provisionFromCheckoutSession(
     if (enr?.created) {
       const code = await createAccessCode(meta.user_id, enr.enrollmentId);
       const email = session.customer_details?.email ?? session.customer_email;
-      if (email) await sendAccessEmail(email, code, APP_URL);
+      if (email) await sendAccessEmail(email, code, appUrl);
     }
   }
 }

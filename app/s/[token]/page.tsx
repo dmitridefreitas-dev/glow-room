@@ -2,8 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";
 import { decodeToken, buildShareImageUrl } from "@/lib/share-token";
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+import { getBaseUrl } from "@/lib/base-url";
 
 type Params = { params: Promise<{ token: string }> };
 
@@ -12,7 +11,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const payload = decodeToken(token);
   if (!payload) return { title: "The Glow Room" };
 
-  const image = buildShareImageUrl(APP_URL, payload, "og");
+  const image = buildShareImageUrl(await getBaseUrl(), payload, "og");
   const title = `${payload.name} is ${Math.round(
     (payload.completed / payload.total) * 100
   )}% through a 30-day glow up`;

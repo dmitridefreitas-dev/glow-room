@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Users, Crown, Trophy, ArrowRight, LogOut, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getBaseUrl } from "@/lib/base-url";
 import { getMySquad, getSquadLeaderboard } from "@/lib/squads";
 import { CopyButton } from "@/components/CopyButton";
 import {
@@ -23,7 +24,7 @@ export default async function SquadPage({
   if (!user) redirect("/login");
 
   const squad = await getMySquad(user.id);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getBaseUrl();
 
   return (
     <div className="mx-auto max-w-2xl">

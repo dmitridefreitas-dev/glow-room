@@ -7,6 +7,7 @@ import { syncBadges } from "@/lib/badges";
 import { Celebrate } from "@/components/Celebrate";
 import { ShareWinButton } from "@/components/ShareWinButton";
 import { buildShareImageUrl, encodeToken } from "@/lib/share-token";
+import { getBaseUrl } from "@/lib/base-url";
 import { getReferralStats } from "@/lib/referral";
 import { scoreFor, tierProgress } from "@/lib/points";
 import { type CheckInRow, dayComplete } from "@/lib/progress";
@@ -78,7 +79,7 @@ export default async function DayDonePage({
   const tier = tierProgress(score).current.label;
 
   const { code: refCode } = await getReferralStats(user.id);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getBaseUrl();
   const referralLink = refCode ? `${appUrl}/r/${refCode}` : undefined;
 
   const payload = {

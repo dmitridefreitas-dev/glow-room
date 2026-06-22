@@ -121,6 +121,30 @@ turned OFF** (see the box below). `npm run build` passes clean.
 
 ---
 
+## 2026-06-21 — Fix: invite/share links 404 in production (were built with localhost)
+**What:** The cohort invite link (and every referral / squad / share / OG link)
+was built from `NEXT_PUBLIC_APP_URL`, which defaults to **`http://localhost:3000`**.
+If that env var isn't set to the real domain on Vercel, the links literally point
+at localhost — so opening one off your machine 404s / fails. (The `/r/[code]` route
+itself was fine — verified it 307-redirects to `/`.)
+- **Fix:** new `lib/base-url.ts` → `getBaseUrl()` derives the origin from the
+  **actual request host** (`x-forwarded-host` / `x-forwarded-proto`) first, then
+  falls back to `NEXT_PUBLIC_APP_URL`, then localhost. So shared links always point
+  at the domain the visitor is really on, even if the env var is wrong/unset —
+  self-healing.
+- Wired into everywhere absolute links are built: `app/dashboard/page.tsx`
+  (referral + **cohort invite** + share), `app/dashboard/day/[n]/done/page.tsx`,
+  `app/dashboard/squad/page.tsx`, `app/s/[token]/page.tsx` (OG image), and the
+  access-code email (`lib/provision.ts`).
+- **Files:** `lib/base-url.ts` (new) + the five above. **No DB migration.** Build
+  passes; verified locally that a simulated `x-forwarded-host` produces
+  `https://<domain>/r/...` links and the route redirects 307.
+
+> Still worth setting `NEXT_PUBLIC_APP_URL` to the real domain on Vercel (it's the
+> fallback for non-request contexts), but links no longer depend on it.
+
+---
+
 ## 2026-06-21 — Retention pass: completion celebration, occasional share, loss-aversion, arc, anchor, before/after
 **What:** Implemented the high-leverage retention misses from `AUDIT.md` for the
 **individual** (solo, self-paced) experience — friends/squads/cohorts stay optional.
