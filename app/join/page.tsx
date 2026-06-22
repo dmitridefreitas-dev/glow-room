@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getEnrollmentForUser } from "@/lib/cohort";
+import { ensureSoloAccess } from "@/lib/provision";
 
 export default async function JoinPage({
   searchParams,
@@ -16,7 +18,26 @@ export default async function JoinPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Already a paying member → never show the paywall again. If they're enrolled,
+  // go straight to the dashboard. If they paid (active membership) but somehow have
+  // no enrollment yet, recover access instead of asking them to pay again.
+  const enrollment = await getEnrollmentForUser(user.id);
+  if (enrollment) redirect("/dashboard");
+
   const admin = createAdminClient();
+
+  const { data: activeSub } = await admin
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+  if (activeSub) {
+    await ensureSoloAccess(user.id);
+    redirect("/dashboard");
+  }
+
   const { data: cohorts } = await admin
     .from("cohorts")
     .select("id, name, start_date, stripe_price_id")

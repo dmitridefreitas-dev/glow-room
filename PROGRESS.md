@@ -121,6 +121,33 @@ turned OFF** (see the box below). `npm run build` passes clean.
 
 ---
 
+## 2026-06-21 — Fix: paid members no longer get asked to pay again ("join cohort" → paywall)
+**What:** An already-paying member who hit `/join` (e.g. via the dashboard's "Join
+a cohort / membership" link) saw the **$18 / $9 paywall again** — even after paying
+membership — which looks like being charged twice.
+- **`/join` is now paid-member-aware:** if the user already has an active
+  enrollment → redirect straight to `/dashboard` (no paywall). If they have an
+  **active membership but no enrollment yet** (e.g. subscribed before access
+  provisioning shipped), recover access via the new `ensureSoloAccess()` in
+  `lib/provision.ts` (creates the personal enrollment + Discord code) and redirect
+  to the dashboard — instead of asking them to pay again.
+- **Removed the dashboard's "Join a cohort / membership" footer link.** Everyone
+  viewing the dashboard already has access, so surfacing the paywall there was
+  pure confusion. "Manage billing" + "Settings" remain.
+- **Files:** `app/join/page.tsx`, `app/dashboard/page.tsx`, `lib/provision.ts`.
+  **No DB migration.** Build passes clean.
+
+> **Note on the double $9 charge:** Stripe is in **test mode** (test keys + card
+> `4242…`), so those were **not real charges** — no money moved. The duplicate
+> just created two subscription rows; access is unaffected. Cancel the extra one
+> anytime via **Manage billing**.
+
+> No redirect loop: dashboard sends *non*-enrolled users to `/join`, and `/join`
+> only sends *enrolled* (or just-recovered) users back — the provisioning step
+> breaks the cycle.
+
+---
+
 ## 2026-06-21 — Fix: "Invite to my crew" points at the crew (was a dead personal-cohort link)
 **What:** The dashboard InvitePanel's "Invite to my cohort" button copied
 `/r/<code>?c=<personalCohortId>` — meaningless now that each member has their own

@@ -634,14 +634,9 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {/* Account links */}
+      {/* Account links — note: no "join/pay" link here. Anyone viewing the
+          dashboard already has access, so we never surface the paywall to them. */}
       <div className="mt-9 flex flex-wrap gap-3 border-t border-line pt-5">
-        <Link
-          href="/join"
-          className="inline-flex items-center gap-2 rounded-xl bg-ivory px-4 py-2.5 text-sm font-semibold text-teal transition hover:bg-teal-light"
-        >
-          <Sparkles className="h-4 w-4" /> Join a cohort / membership
-        </Link>
         <form action="/api/portal" method="post">
           <button
             type="submit"

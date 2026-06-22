@@ -120,3 +120,23 @@ async function ensureSoloEnrollment(
     .single();
   return enr ? { enrollmentId: enr.id, created: true } : null;
 }
+
+/**
+ * Recovery path: grant solo access to a user who has paid but somehow has no
+ * enrollment yet (e.g. a membership bought before access provisioning shipped),
+ * so we never ask a paying member to pay again. Creates the personal enrollment
+ * and, on first provision, a Discord access code + email. Idempotent.
+ */
+export async function ensureSoloAccess(userId: string): Promise<void> {
+  const admin = createAdminClient();
+  const enr = await ensureSoloEnrollment(admin, userId);
+  if (enr?.created) {
+    const code = await createAccessCode(userId, enr.enrollmentId);
+    const { data: u } = await admin
+      .from("users")
+      .select("email")
+      .eq("id", userId)
+      .maybeSingle();
+    if (u?.email) await sendAccessEmail(u.email, code, await getBaseUrl());
+  }
+}
