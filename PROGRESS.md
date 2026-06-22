@@ -121,6 +121,25 @@ turned OFF** (see the box below). `npm run build` passes clean.
 
 ---
 
+## 2026-06-21 — Fix: saving a check-in WITH a photo threw "Something went wrong"
+**What:** Attaching a photo and saving a day errored to the global error boundary
+(`app/error.tsx`, "That's on us, not you"). Cause: the `saveCheckIn` **server
+action**'s default request-body limit is **1MB**, and a phone photo blows past it,
+so Next rejects the POST before the action even runs. (Saving without a photo
+worked — the tell.)
+- **Raised the limit:** `experimental.serverActions.bodySizeLimit: "8mb"` in
+  `next.config.mjs`.
+- **Compress in the browser first:** new `components/PhotoField.tsx` downscales
+  (max 1600px) + re-encodes to JPEG before upload, so payloads are small. This also
+  keeps photos under **Vercel's ~4.5MB request cap** (which the body limit alone
+  can't fix) and makes saves faster. Falls back to the original file if the browser
+  can't decode it (e.g. some HEIC in Chrome). The day page now uses `<PhotoField>`
+  instead of a raw `<input type="file">`.
+- **Files:** `next.config.mjs`, `components/PhotoField.tsx` (new),
+  `app/dashboard/day/[n]/page.tsx`. **No DB migration.** Build passes clean.
+
+---
+
 ## 2026-06-21 — Fix: paid members no longer get asked to pay again ("join cohort" → paywall)
 **What:** An already-paying member who hit `/join` (e.g. via the dashboard's "Join
 a cohort / membership" link) saw the **$18 / $9 paywall again** — even after paying

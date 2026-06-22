@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEnrollmentForUser } from "@/lib/cohort";
 import { doneCount, totalTasks } from "@/lib/progress";
+import { PhotoField } from "@/components/PhotoField";
 import { saveCheckIn } from "../../actions";
 
 type Pillar = {
@@ -279,20 +280,7 @@ export default async function DayPage({
           <h2 className="mt-4 text-sm font-bold uppercase tracking-wide text-spruce">
             Photo {existing?.photo_path ? "(replaces saved one)" : "(optional)"}
           </h2>
-          {savedPhotoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={savedPhotoUrl}
-              alt={`Your Day ${day} photo`}
-              className="mt-2 max-h-72 rounded-xl border border-line"
-            />
-          )}
-          <input
-            type="file"
-            name="photo"
-            accept="image/*"
-            className="mt-2 block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-spruce file:px-3 file:py-2 file:text-xs file:font-semibold file:text-ivory"
-          />
+          <PhotoField savedPhotoUrl={savedPhotoUrl} day={day} />
           <p className="mt-1 text-xs text-muted">
             Stored privately — only you can see it.
           </p>
