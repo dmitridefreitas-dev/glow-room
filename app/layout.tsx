@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
+import "./game.css";
 import { AnalyticsInit } from "./providers";
 
 const inter = Inter({
@@ -49,7 +50,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${bricolage.variable}`}>
-      <body className="font-sans antialiased">
+      <body className="game-bg font-sans antialiased">
         <AnalyticsInit />
         {children}
       </body>

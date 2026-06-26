@@ -8,6 +8,10 @@ import {
   Anchor,
   ArrowLeft,
   ArrowRight,
+  Swords,
+  Flag,
+  Crown,
+  Map as MapIcon,
   type LucideIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +28,8 @@ type Pillar = {
   accent: string;
   Icon: LucideIcon;
 };
+
+type Milestone = { tag: string; Icon: LucideIcon; ring: string; copy: React.ReactNode };
 
 export default async function DayPage({
   params,
@@ -96,147 +102,147 @@ export default async function DayPage({
 
   const pillars: Pillar[] = [];
   if (content?.movement_task)
-    pillars.push({
-      key: "movement_done",
-      label: "Movement",
-      task: content.movement_task,
-      accent: "bg-coral",
-      Icon: Footprints,
-    });
+    pillars.push({ key: "movement_done", label: "Movement", task: content.movement_task, accent: "bg-coral", Icon: Footprints });
   if (content?.skin_task)
-    pillars.push({
-      key: "skin_done",
-      label: "Skin",
-      task: content.skin_task,
-      accent: "bg-teal",
-      Icon: Sparkles,
-    });
+    pillars.push({ key: "skin_done", label: "Skin", task: content.skin_task, accent: "bg-teal", Icon: Sparkles });
   if (content?.mindset_prompt)
-    pillars.push({
-      key: "mindset_done",
-      label: "Mindset",
-      task: content.mindset_prompt,
-      accent: "bg-honey",
-      Icon: Brain,
-    });
-  pillars.push({
-    key: "anchor_done",
-    label: "Habit anchor",
-    task: profile?.habit_anchor ?? "Your daily anchor",
-    accent: "bg-sage",
-    Icon: Anchor,
-  });
+    pillars.push({ key: "mindset_done", label: "Mindset", task: content.mindset_prompt, accent: "bg-honey", Icon: Brain });
+  pillars.push({ key: "anchor_done", label: "Habit anchor", task: profile?.habit_anchor ?? "Your daily anchor", accent: "bg-sage", Icon: Anchor });
+
+  // Boss / checkpoint framing for the scripted arc days.
+  const milestone: Milestone | null = isFuture
+    ? null
+    : day === 8
+      ? {
+          tag: "Boss · The Wall",
+          Icon: Swords,
+          ring: "from-coral to-honey",
+          copy: (
+            <>
+              <strong>This is the hard day.</strong> Day 8 is when most people quit —
+              that&apos;s by design, not a sign you&apos;re failing. Do the smallest
+              version and just don&apos;t skip. Beat the boss.
+            </>
+          ),
+        }
+      : day === 15
+        ? {
+            tag: "Checkpoint · The Turn",
+            Icon: Flag,
+            ring: "from-teal to-sage",
+            copy: (
+              <>
+                <strong>Halfway. 🎉</strong> This is the turning point — the part where
+                it starts to feel like who you are, not what you&apos;re forcing.
+              </>
+            ),
+          }
+        : day === 22
+          ? {
+              tag: "Checkpoint · Home Stretch",
+              Icon: Flag,
+              ring: "from-sage to-teal",
+              copy: (
+                <>
+                  <strong>Day 22 — you&apos;re past the hard part.</strong> Eight to go.
+                  It&apos;s yours to lose now. Protect the streak.
+                </>
+              ),
+            }
+          : day === enrollment.totalDays
+            ? {
+                tag: "Final Boss · The Reveal",
+                Icon: Crown,
+                ring: "from-spruce to-coral",
+                copy: (
+                  <>
+                    <strong>The final day.</strong> Finish it and your before &amp; after
+                    is waiting. Go claim it.
+                  </>
+                ),
+              }
+            : null;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div>
       <div className="flex items-center justify-between">
-        <Link href="/dashboard" className="text-sm font-semibold text-teal">
-          ← Dashboard
+        <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm font-bold text-teal">
+          <MapIcon className="h-4 w-4" /> Map
         </Link>
-        <span className="text-xs text-muted">
-          Day {day} of {enrollment.totalDays}
+        <span className="chip-stat bg-spruce/5 text-spruce">
+          Stage {day} / {enrollment.totalDays}
         </span>
       </div>
 
-      <h1 className="mt-3 text-3xl font-extrabold text-spruce">Day {day}</h1>
+      <h1 className="mt-3 font-display text-4xl font-extrabold text-spruce">Day {day}</h1>
       {!isFuture && (
-        <p className="mt-1 text-sm text-muted">
-          {done === tasks ? (
-            <span className="font-semibold text-sage">
-              All {tasks} tasks done ✓ — this day counts toward your streak.
-            </span>
-          ) : (
-            <>
-              {done} of {tasks} tasks ticked. Tick all {tasks} to complete the
-              day.
-            </>
-          )}
-        </p>
+        <>
+          <p className="mt-1 text-sm text-muted">
+            {done === tasks ? (
+              <span className="font-bold text-sage">All {tasks} objectives cleared ✓</span>
+            ) : (
+              <>
+                {done} / {tasks} objectives — clear them all to complete the stage.
+              </>
+            )}
+          </p>
+          <div className="xp-track mt-3 h-2.5">
+            <div className="xp-fill h-full" style={{ width: `${(done / tasks) * 100}%` }} />
+          </div>
+        </>
       )}
 
       {saveError && (
-        <div className="mt-3 rounded-xl bg-coral-light px-4 py-3 text-sm text-spruce">
+        <div className="mt-3 rounded-2xl bg-coral-light px-4 py-3 text-sm text-spruce">
           Couldn&apos;t save: {saveError}
         </div>
       )}
 
-      {!isFuture && day === 8 && (
-        <div className="mt-3 rounded-xl bg-honey-light px-4 py-3 text-sm text-spruce">
-          <strong>This is the hard day.</strong> Day 8 is when most people quit —
-          that&apos;s by design, not a sign you&apos;re failing. Do the smallest
-          version and just don&apos;t skip. You&apos;ve got this.
-        </div>
-      )}
-
-      {!isFuture && day === 15 && (
-        <div className="mt-3 rounded-xl bg-teal-light px-4 py-3 text-sm text-spruce">
-          <strong>Halfway. 🎉</strong> This is the turning point — the part where it
-          starts to feel like who you are, not what you&apos;re forcing. Your skin&apos;s
-          about to start showing it too.
-        </div>
-      )}
-
-      {!isFuture && day === 22 && (
-        <div className="mt-3 rounded-xl bg-sage-light px-4 py-3 text-sm text-spruce">
-          <strong>Day 22 — you&apos;re past the hard part.</strong> Eight to go. It&apos;s
-          yours to lose now. Protect the streak.
-        </div>
-      )}
-
-      {!isFuture && day === enrollment.totalDays && (
-        <div className="mt-3 rounded-xl bg-honey-light px-4 py-3 text-sm text-spruce">
-          <strong>The final day.</strong> Finish it and your before &amp; after is
-          waiting. You did the whole thing — go claim it.
+      {milestone && (
+        <div className="panel-game mt-4 overflow-hidden p-0">
+          <div className={`flex items-center gap-2 bg-gradient-to-r ${milestone.ring} px-4 py-2 text-white`}>
+            <milestone.Icon className="h-4 w-4" />
+            <span className="text-xs font-extrabold uppercase tracking-game">{milestone.tag}</span>
+          </div>
+          <p className="px-4 py-3 text-sm text-spruce">{milestone.copy}</p>
         </div>
       )}
 
       {isFuture ? (
-        <div className="mt-6 rounded-2xl border border-line bg-white p-8 text-center">
-          <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-ivory text-muted">
-            <Lock className="h-6 w-6" />
+        <div className="panel-dark mt-6 p-8 text-center">
+          <span className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-ivory/10 text-ivory">
+            <Lock className="h-7 w-7" />
           </span>
-          <h2 className="mt-4 text-lg font-bold text-spruce">
-            Day {day} is locked
-          </h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-            It unlocks <strong>{unlockLabel}</strong>. One new day opens every
-            midnight — you can&apos;t skip ahead. That&apos;s what keeps the
-            challenge honest and the leaderboard fair.
+          <h2 className="mt-4 font-display text-xl font-extrabold">Stage {day} is locked</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-ivory/75">
+            It unlocks <strong className="text-honey">{unlockLabel}</strong>. One new stage
+            opens every midnight — no skipping ahead. That&apos;s what keeps the run honest.
           </p>
           {enrollment.started ? (
-            <Link
-              href={`/dashboard/day/${enrollment.currentDay}`}
-              className="mt-5 inline-block rounded-xl bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90"
-            >
+            <Link href={`/dashboard/day/${enrollment.currentDay}`} className="btn-game btn-primary mt-6">
               Go to today — Day {enrollment.currentDay}
             </Link>
           ) : (
-            <Link
-              href="/dashboard"
-              className="mt-5 inline-block rounded-xl bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90"
-            >
+            <Link href="/dashboard" className="btn-game btn-primary mt-6">
               Back to countdown
             </Link>
           )}
         </div>
       ) : (
-      <form action={saveCheckIn} className="mt-6 space-y-4">
-        <input type="hidden" name="day_number" value={day} />
+        <form action={saveCheckIn} className="mt-5 space-y-3.5">
+          <input type="hidden" name="day_number" value={day} />
 
-        {pillars.map((p) => (
-          <div key={p.key} className="rounded-2xl border border-line bg-white p-5">
-            <div className="flex items-start gap-3">
+          {pillars.map((p) => (
+            <label key={p.key} className="panel-game flex cursor-pointer items-start gap-3 p-4">
               <input
                 type="checkbox"
                 name={p.key}
                 defaultChecked={Boolean(existing?.[p.key])}
-                className="mt-1 h-5 w-5 accent-coral"
+                className="mt-1 h-6 w-6 shrink-0 accent-coral"
               />
-              <div className="flex-1">
-                <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-spruce">
-                  <span
-                    className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-white ${p.accent}`}
-                  >
+              <div className="min-w-0 flex-1">
+                <h2 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-game text-spruce">
+                  <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-white ${p.accent}`}>
                     <p.Icon className="h-4 w-4" strokeWidth={2.4} />
                   </span>
                   {p.label}
@@ -248,7 +254,7 @@ export default async function DayPage({
                     name="movement_log"
                     defaultValue={existing?.movement_log ?? ""}
                     placeholder="What did you do? (optional)"
-                    className="mt-3 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-teal"
+                    className="mt-3 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-teal"
                   />
                 )}
                 {p.key === "mindset_done" && (
@@ -257,62 +263,54 @@ export default async function DayPage({
                     defaultValue={existing?.mindset_answer ?? ""}
                     placeholder="Your answer (optional)…"
                     rows={3}
-                    className="mt-3 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-teal"
+                    className="mt-3 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-teal"
                   />
                 )}
               </div>
-            </div>
+            </label>
+          ))}
+
+          <div className="panel-game p-4">
+            <h2 className="text-xs font-extrabold uppercase tracking-game text-spruce">Daily reflection</h2>
+            <textarea
+              name="reflection"
+              defaultValue={existing?.reflection ?? ""}
+              placeholder="A line or two about today (optional)…"
+              rows={2}
+              className="mt-2 w-full rounded-xl border border-line bg-white px-3 py-2 text-sm outline-none focus:border-teal"
+            />
+            <h2 className="mt-4 text-xs font-extrabold uppercase tracking-game text-spruce">
+              Photo {existing?.photo_path ? "(replaces saved one)" : "(optional)"}
+            </h2>
+            <PhotoField savedPhotoUrl={savedPhotoUrl} day={day} />
+            <p className="mt-1 text-xs text-muted">Stored privately — only you can see it.</p>
           </div>
-        ))}
 
-        {/* Reflection + photo */}
-        <div className="rounded-2xl border border-line bg-white p-5">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-spruce">
-            Daily reflection
-          </h2>
-          <textarea
-            name="reflection"
-            defaultValue={existing?.reflection ?? ""}
-            placeholder="A line or two about today (optional)…"
-            rows={2}
-            className="mt-2 w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-teal"
-          />
-          <h2 className="mt-4 text-sm font-bold uppercase tracking-wide text-spruce">
-            Photo {existing?.photo_path ? "(replaces saved one)" : "(optional)"}
-          </h2>
-          <PhotoField savedPhotoUrl={savedPhotoUrl} day={day} />
-          <p className="mt-1 text-xs text-muted">
-            Stored privately — only you can see it.
-          </p>
-        </div>
+          <button type="submit" className="btn-game btn-primary w-full text-base">
+            Complete stage <ArrowRight className="h-4 w-4" />
+          </button>
 
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2 text-sm">
-            {day > 1 && (
+          <div className="flex items-center justify-between pt-1 text-sm">
+            {day > 1 ? (
               <Link
                 href={`/dashboard/day/${day - 1}`}
-                className="inline-flex items-center gap-1 rounded-lg px-3 py-2.5 font-semibold text-teal transition hover:bg-teal-light"
+                className="inline-flex items-center gap-1 font-bold text-teal"
               >
                 <ArrowLeft className="h-4 w-4" /> Day {day - 1}
               </Link>
+            ) : (
+              <span />
             )}
             {day < enrollment.totalDays && (
               <Link
                 href={`/dashboard/day/${day + 1}`}
-                className="inline-flex items-center gap-1 rounded-lg px-3 py-2.5 font-semibold text-teal transition hover:bg-teal-light"
+                className="inline-flex items-center gap-1 font-bold text-teal"
               >
                 Day {day + 1} <ArrowRight className="h-4 w-4" />
               </Link>
             )}
           </div>
-          <button
-            type="submit"
-            className="rounded-xl bg-coral px-6 py-3 text-sm font-semibold text-white transition hover:bg-coral/90"
-          >
-            Save check-in
-          </button>
-        </div>
-      </form>
+        </form>
       )}
     </div>
   );

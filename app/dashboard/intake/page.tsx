@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Avatar } from "@/components/game/Avatar";
 import { saveIntake } from "../actions";
 
 const OPTIONS = [
@@ -26,58 +27,46 @@ export default async function IntakePage() {
   if (profile?.habit_anchor) redirect("/dashboard");
 
   return (
-    <div className="mx-auto max-w-lg">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">
-        Before Day 1
-      </p>
-      <h1 className="mt-2 text-3xl font-extrabold text-spruce">
-        Pick your habit anchor
-      </h1>
-      <p className="mt-3 text-muted">
-        One small, non-negotiable thing you&apos;ll do <em>every single day</em>{" "}
-        for the whole challenge. It stays the same all 30 days — it&apos;s the
-        metronome everything else plays against. Choose the one you&apos;re most
-        likely to actually keep.
-      </p>
+    <div>
+      <div className="text-center">
+        <Avatar stage={1} size={120} />
+        <p className="mt-2 text-xs font-bold uppercase tracking-game text-teal">
+          Create your player
+        </p>
+        <h1 className="mt-1 font-display text-3xl font-extrabold text-spruce">
+          Choose your anchor
+        </h1>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
+          One small, non-negotiable thing you&apos;ll do <em>every single day</em> of the
+          quest. It never changes — it&apos;s the metronome everything else plays against.
+          Pick the one you&apos;re most likely to actually keep.
+        </p>
+      </div>
 
       <form action={saveIntake} className="mt-7 space-y-3">
         {OPTIONS.map((opt) => (
           <label
             key={opt}
-            className="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm font-medium text-ink transition hover:border-teal"
+            className="panel-game flex cursor-pointer items-center gap-3 px-4 py-3.5 text-sm font-semibold text-ink"
           >
-            <input
-              type="radio"
-              name="anchor"
-              value={opt}
-              required
-              className="h-4 w-4 accent-coral"
-            />
+            <input type="radio" name="anchor" value={opt} required className="h-5 w-5 accent-coral" />
             {opt}
           </label>
         ))}
 
-        <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm font-medium text-ink transition hover:border-teal">
-          <input
-            type="radio"
-            name="anchor"
-            value="__custom"
-            className="h-4 w-4 accent-coral"
-          />
+        <label className="panel-game flex cursor-pointer items-center gap-3 px-4 py-3.5 text-sm font-semibold text-ink">
+          <input type="radio" name="anchor" value="__custom" className="h-5 w-5 accent-coral" />
           Something else:
           <input
             type="text"
             name="custom"
             placeholder="my own anchor…"
-            className="flex-1 rounded-lg border border-line px-3 py-1.5 text-sm outline-none focus:border-teal"
+            className="flex-1 rounded-lg border border-line bg-white px-3 py-1.5 text-sm outline-none focus:border-teal"
           />
         </label>
 
-        <button
-          type="submit"
-          className="mt-2 w-full rounded-xl bg-coral px-4 py-3 text-sm font-semibold text-white transition hover:bg-coral/90"
-        >
-          Lock it in &amp; start
+        <button type="submit" className="btn-game btn-primary mt-2 w-full text-base">
+          ▶ Lock it in &amp; start
         </button>
       </form>
     </div>

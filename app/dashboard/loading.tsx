@@ -1,25 +1,23 @@
+import { Avatar } from "@/components/game/Avatar";
+
+const TIPS = [
+  "A missed day only costs a little XP — never your whole run.",
+  "Day 8 is 'The Wall'. Everyone feels it. Push through and you level up.",
+  "Your habit anchor is the backbone — never skip it.",
+  "Keep the flame alive: streaks are worth more than perfect days.",
+];
+
 export default function DashboardLoading() {
+  // Static pick (no randomness during render); rotates by nothing fancy.
+  const tip = TIPS[0];
   return (
-    <div className="animate-pulse">
-      <div className="h-3 w-28 rounded bg-line" />
-      <div className="mt-3 h-8 w-48 rounded bg-line" />
-      <div className="mt-2 h-4 w-64 rounded bg-line" />
-
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        <div className="h-20 rounded-2xl bg-line/70" />
-        <div className="h-20 rounded-2xl bg-line/70" />
-        <div className="h-20 rounded-2xl bg-line/70" />
+    <div className="loadscreen">
+      <Avatar stage={4} size={120} />
+      <div className="font-display text-xl font-extrabold text-spruce">Loading your quest…</div>
+      <div className="loadbar">
+        <i />
       </div>
-
-      <div className="mt-5 h-3 w-full rounded-full bg-line" />
-      <div className="mt-6 h-20 rounded-2xl bg-line/70" />
-      <div className="mt-4 h-16 rounded-2xl bg-line/70" />
-
-      <div className="mt-8 grid grid-cols-6 gap-2 sm:grid-cols-10">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div key={i} className="aspect-square rounded-xl bg-line/60" />
-        ))}
-      </div>
+      <p className="max-w-xs text-xs text-muted">Tip: {tip}</p>
     </div>
   );
 }

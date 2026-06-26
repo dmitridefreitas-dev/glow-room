@@ -13,6 +13,7 @@ import {
   PartyPopper,
   Users,
   Anchor,
+  Zap,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -28,7 +29,10 @@ import { buildShareImageUrl, encodeToken } from "@/lib/share-token";
 import { getReferralStats } from "@/lib/referral";
 import { getMySquad } from "@/lib/squads";
 import { scoreFor, tierProgress } from "@/lib/points";
+import { levelFor } from "@/lib/level";
 import { TierEmblem } from "@/components/Tier";
+import { QuestMap, type QuestNode } from "@/components/QuestMap";
+import { Avatar, stageFromLevel } from "@/components/game/Avatar";
 import {
   type CheckInRow,
   dayComplete,
@@ -192,6 +196,22 @@ export default async function DashboardPage({
   // Same formula the cohort/crew leaderboards use, so the numbers always match.
   const score = scoreFor(completed, today);
   const rank = tierProgress(score);
+  const level = levelFor(score);
+
+  // Quest-map nodes: the same per-day state the old grid used, shaped for the
+  // winding level-path. Completion wins over "today" so a finished current day
+  // still shows its check; the "you are here" marker is keyed off `today`.
+  const questNodes: QuestNode[] = Array.from({ length: total }, (_, i) => {
+    const d = i + 1;
+    const c = byDay.get(d);
+    let state: QuestNode["state"];
+    if (dayComplete(c, type)) state = "complete";
+    else if (d === today) state = "today";
+    else if (dayStarted(c, type)) state = "started";
+    else if (d > today) state = "locked";
+    else state = "available";
+    return { day: d, state };
+  });
 
   // Referral (R2) — defensive: null until the 0004 migration is applied.
   const { code: refCode, count: refCount, recruiter } = await getReferralStats(
@@ -263,13 +283,56 @@ export default async function DashboardPage({
         </div>
       )}
 
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">
-        Glow Up Challenge
-      </p>
-      <h1 className="mt-2 text-3xl font-extrabold text-spruce">Hey {name} 👋</h1>
-      <p className="mt-1 text-sm text-muted">
-        Anchor: <strong>{profile.habit_anchor}</strong> · every day, no excuses.
-      </p>
+      {/* hero: your evolving avatar — it glows up as you level up */}
+      <div className="text-center">
+        <p className="text-xs font-bold uppercase tracking-game text-teal">
+          Glow Up Quest
+        </p>
+        <div className="mt-2 flex justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 -z-0 rounded-full bg-honey/20 blur-2xl" />
+            <Avatar stage={stageFromLevel(level.level)} size={132} className="relative z-10" />
+          </div>
+        </div>
+        <h1 className="mt-1 font-display text-2xl font-extrabold text-spruce">
+          Hey {name} 👋
+        </h1>
+        <p className="mt-0.5 text-sm text-muted">
+          Anchor: <strong className="text-spruce">{profile.habit_anchor}</strong>
+        </p>
+      </div>
+
+      {/* ── GAME HUD: level · XP · streak — the persistent player header ── */}
+      <div className="mt-5 flex items-center gap-3 rounded-2xl bg-gradient-to-br from-spruce to-spruce-dark px-4 py-3 text-ivory shadow-md">
+        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-coral text-white shadow">
+          <Zap className="h-3 w-3" fill="currentColor" strokeWidth={0} />
+          <span className="font-display text-lg font-extrabold leading-none">
+            {level.level}
+          </span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between text-[11px] font-semibold">
+            <span className="uppercase tracking-wide text-ivory/70">
+              Level {level.level} · {rank.current.label}
+            </span>
+            <span className="text-ivory/60">
+              {level.intoLevel}/{level.span} XP
+            </span>
+          </div>
+          <div className="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-ivory/15">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-honey to-coral transition-all"
+              style={{ width: `${level.pct}%` }}
+            />
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col items-center">
+          <Flame className="flame-glow h-5 w-5 text-honey" strokeWidth={2.4} />
+          <span className="font-display text-sm font-extrabold leading-none">
+            {streak}
+          </span>
+        </div>
+      </div>
 
       {/* Streak loss-aversion: when today isn't done yet and a streak is on the
           line, make the cost of skipping visible. */}
@@ -446,59 +509,29 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      {/* ── HERO VISUAL: the 30-day grid ── */}
+      {/* ── HERO VISUAL: the quest map (the journey as a level-path) ── */}
       <div className="mt-9 flex items-center justify-between">
         <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-teal">
-          Your {total} days
+          Your quest
         </h2>
-        <span className="text-[11px] text-muted">Screenshot-worthy 👀</span>
+        <span className="text-[11px] text-muted">
+          Day {today} of {total} 🗺️
+        </span>
       </div>
-      <div className="mt-3 rounded-3xl border border-line bg-white p-4 shadow-sm sm:p-5">
-        <div className="grid grid-cols-6 gap-2 sm:grid-cols-10 sm:gap-2.5">
-          {Array.from({ length: total }, (_, i) => i + 1).map((d) => {
-            const c = byDay.get(d);
-            const locked = d > today;
-            const isComplete = dayComplete(c, type);
-            const cls = isComplete
-              ? "bg-sage text-white"
-              : dayStarted(c, type)
-                ? "bg-honey-light text-spruce"
-                : locked
-                  ? "bg-ivory text-muted"
-                  : "bg-white text-muted";
-            const ring =
-              d === today ? "ring-2 ring-coral" : "border border-line";
-            const pop = d === today && isComplete ? "animate-pop" : "";
-            return (
-              <Link
-                key={d}
-                href={`/dashboard/day/${d}`}
-                className={`relative flex aspect-square items-center justify-center rounded-xl text-sm font-bold transition hover:scale-[1.06] ${cls} ${ring} ${pop}`}
-              >
-                {locked ? (
-                  <>
-                    <span className="opacity-50">{d}</span>
-                    <Lock className="absolute right-1 top-1 h-3 w-3 opacity-60" />
-                  </>
-                ) : (
-                  d
-                )}
-              </Link>
-            );
-          })}
-        </div>
+      <div className="mt-3 rounded-3xl border border-line bg-white p-4 shadow-sm sm:p-6">
+        <QuestMap nodes={questNodes} today={today} total={total} />
         <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
           <span className="inline-flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-sage" /> complete
+            <span className="h-2.5 w-2.5 rounded-full bg-sage" /> cleared
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-honey" /> started
+            <span className="h-2.5 w-2.5 rounded-full bg-honey" /> in progress
           </span>
           <span className="inline-flex items-center gap-1">
             <Lock className="h-3 w-3" /> unlocks at midnight
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="h-2.5 w-2.5 rounded-full ring-2 ring-coral" /> today
+            <span className="h-2.5 w-2.5 rounded-full bg-coral" /> you are here
           </span>
         </p>
       </div>

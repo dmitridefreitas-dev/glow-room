@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Medal, Users } from "lucide-react";
+import { Medal, Users, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getMySquad, getSquadLeaderboard } from "@/lib/squads";
 
@@ -25,39 +25,48 @@ export default async function SquadLeaderboardPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <Link href="/dashboard/squad" className="text-sm font-semibold text-teal">
-        ← Your crew
+    <div>
+      <Link
+        href="/dashboard/squad"
+        className="inline-flex items-center gap-1 text-sm font-bold text-teal"
+      >
+        <ArrowLeft className="h-4 w-4" /> Crew
       </Link>
-      <h1 className="mt-3 text-3xl font-extrabold text-spruce">
-        Crew leaderboard
-      </h1>
-      <p className="mt-1 text-sm text-muted">
-        Ranked by crew points — every day a member completes adds 10. Bigger, more
-        consistent crews climb, so recruit and show up.
-      </p>
+
+      <div className="mt-3 text-center">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-honey-light text-honey anim-badgeglow">
+          <Users className="h-6 w-6" />
+        </span>
+        <h1 className="mt-2 font-display text-3xl font-extrabold text-spruce">
+          Crew leaderboard
+        </h1>
+        <p className="mx-auto mt-1 max-w-xs text-sm text-muted">
+          +10 crew points for every day a member clears. Bigger, more consistent
+          crews climb — recruit and show up.
+        </p>
+      </div>
 
       {board.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">
+        <p className="mt-6 text-center text-sm text-muted">
           No crews on the board yet — start one and be first.
         </p>
       ) : (
-        <ol className="mt-6 space-y-2">
+        <ol className="mt-6 space-y-2.5">
           {board.map((s, i) => {
             const isMine = mine?.id === s.squad_id;
             return (
               <li
                 key={s.squad_id}
-                className={`flex items-center justify-between rounded-2xl border px-5 py-3 ${
-                  isMine ? "border-coral bg-coral-light" : "border-line bg-white"
+                className={`flex items-center justify-between rounded-2xl px-4 py-3 ${
+                  isMine ? "panel-game ring-2 ring-coral" : "panel-game"
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  <span className="flex w-7 justify-center">
+                <div className="flex items-center gap-3">
+                  <span className="flex w-6 justify-center">
                     <Rank n={i + 1} />
                   </span>
                   <div>
-                    <div className="font-semibold text-ink">
+                    <div className="font-bold text-ink">
                       {s.name}
                       {isMine && (
                         <span className="ml-2 text-xs font-bold text-coral">
@@ -65,7 +74,7 @@ export default async function SquadLeaderboardPage() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-muted">
+                    <div className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-muted">
                       <Users className="h-3 w-3" /> {s.member_count}
                     </div>
                   </div>

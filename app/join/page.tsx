@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, Map as MapIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEnrollmentForUser } from "@/lib/cohort";
 import { ensureSoloAccess } from "@/lib/provision";
+import { Avatar } from "@/components/game/Avatar";
 
 export default async function JoinPage({
   searchParams,
@@ -18,9 +19,7 @@ export default async function JoinPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Already a paying member → never show the paywall again. If they're enrolled,
-  // go straight to the dashboard. If they paid (active membership) but somehow have
-  // no enrollment yet, recover access instead of asking them to pay again.
+  // Already a paying member → never show the paywall again.
   const enrollment = await getEnrollmentForUser(user.id);
   if (enrollment) redirect("/dashboard");
 
@@ -48,21 +47,31 @@ export default async function JoinPage({
   const membershipEnabled = Boolean(process.env.STRIPE_MEMBERSHIP_PRICE_ID);
 
   return (
-    <main className="min-h-screen bg-ivory">
-      <div className="mx-auto max-w-2xl px-6 py-12">
-        <Link href="/dashboard" className="text-sm font-semibold text-teal">
-          ← Dashboard
+    <main className="relative min-h-dvh overflow-hidden px-6 py-12">
+      <div className="stage-bg" aria-hidden="true">
+        <span className="orb orb-1" />
+        <span className="orb orb-2" />
+        <span className="orb orb-3" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-md">
+        <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm font-bold text-ivory/70">
+          <MapIcon className="h-4 w-4" /> Map
         </Link>
-        <h1 className="mt-3 text-3xl font-extrabold text-spruce">
-          Join The Glow Room
-        </h1>
-        <p className="mt-1 text-muted">
-          Get instant access to the 30-day Glow Up Challenge, your private
-          dashboard, and the members-only Discord. Pick a plan to start today.
-        </p>
+
+        <div className="mt-3 text-center">
+          <Avatar stage={3} size={110} />
+          <h1 className="mt-2 font-display text-3xl font-extrabold text-ivory">
+            Choose your mode
+          </h1>
+          <p className="mx-auto mt-1 max-w-xs text-sm text-ivory/70">
+            Instant access to the 30-day Glow Up quest, your dashboard, and the
+            members-only Discord. Start today.
+          </p>
+        </div>
 
         {sp.error && (
-          <div className="mt-4 rounded-xl bg-coral-light px-4 py-3 text-sm text-spruce">
+          <div className="mt-5 rounded-2xl bg-coral-light px-4 py-3 text-sm text-spruce">
             {sp.error === "cohort-not-configured"
               ? "This cohort isn't set up for checkout yet (run the Stripe setup script)."
               : sp.error === "membership-not-configured"
@@ -71,12 +80,14 @@ export default async function JoinPage({
           </div>
         )}
 
-        {/* Cohorts */}
-        <div className="mt-8 space-y-4">
+        {/* Story mode — cohorts */}
+        <h2 className="mt-8 text-xs font-extrabold uppercase tracking-game text-honey">
+          Story mode · one-time
+        </h2>
+        <div className="mt-3 space-y-3">
           {(cohorts ?? []).length === 0 && (
-            <div className="rounded-2xl border border-line bg-white p-6 text-sm text-muted">
-              No purchasable cohorts yet. Run{" "}
-              <code>scripts/setup-stripe.mjs</code> to create one.
+            <div className="panel-game p-6 text-sm text-muted">
+              No purchasable cohorts yet. Run <code>scripts/setup-stripe.mjs</code> to create one.
             </div>
           )}
           {(cohorts ?? []).map((c) => (
@@ -84,7 +95,7 @@ export default async function JoinPage({
               key={c.id}
               action="/api/checkout"
               method="post"
-              className="flex items-center justify-between rounded-2xl border border-line bg-white p-6"
+              className="panel-game flex items-center justify-between p-5"
             >
               <input type="hidden" name="kind" value="cohort" />
               <input type="hidden" name="cohort_id" value={c.id} />
@@ -96,38 +107,35 @@ export default async function JoinPage({
                     : "Start date TBA"}
                 </div>
               </div>
-              <button
-                type="submit"
-                className="rounded-xl bg-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral/90"
-              >
-                Join — $18
+              <button type="submit" className="btn-game btn-primary">
+                Play — $18
               </button>
             </form>
           ))}
         </div>
 
-        {/* Membership */}
-        <h2 className="mt-10 text-sm font-bold uppercase tracking-[0.15em] text-teal">
-          Or go monthly
+        {/* Endless mode — membership */}
+        <h2 className="mt-8 text-xs font-extrabold uppercase tracking-game text-honey">
+          Endless mode · monthly
         </h2>
-        <div className="mt-3 rounded-2xl bg-spruce p-6 text-ivory">
+        <div className="panel-dark mt-3 p-6">
           <div className="flex items-baseline justify-between gap-4">
             <div className="text-lg font-bold">The Glow Room Monthly</div>
             <div className="shrink-0">
-              <span className="text-2xl font-extrabold">$9</span>
+              <span className="font-display text-2xl font-extrabold">$9</span>
               <span className="text-sm text-ivory/70">/mo</span>
             </div>
           </div>
           <p className="mt-1 text-sm text-ivory/80">
-            Ongoing access to everything The Glow Room — cancel anytime. You start
-            today; your 30 days are unlocked right away.
+            Ongoing access to everything — cancel anytime. You start today; your 30
+            days unlock right away.
           </p>
           <ul className="mt-4 space-y-2 text-sm text-ivory/90">
             {[
-              "The full 30-day Glow Up Challenge + your private dashboard",
+              "The full 30-day Glow Up quest + your dashboard",
               "Members-only Discord community",
-              "All four seasonal cohorts a year — do it “together” whenever you like",
-              "New monthly drops, challenges & streak rewards",
+              "Every seasonal challenge, all year",
+              "New monthly drops, quests & streak rewards",
             ].map((feature) => (
               <li key={feature} className="flex items-start gap-2">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-honey" />
@@ -140,9 +148,9 @@ export default async function JoinPage({
             <button
               type="submit"
               disabled={!membershipEnabled}
-              className="w-full rounded-xl bg-honey px-5 py-3 text-sm font-semibold text-spruce transition hover:bg-honey/90 disabled:opacity-50"
+              className="btn-game btn-honey w-full disabled:opacity-50"
             >
-              Subscribe — $9/mo
+              Go endless — $9/mo
             </button>
           </form>
           {!membershipEnabled && (
@@ -152,9 +160,8 @@ export default async function JoinPage({
           )}
         </div>
 
-        <p className="mt-6 text-xs text-muted">
-          Test mode — use card <code>4242 4242 4242 4242</code>, any future expiry
-          &amp; CVC.
+        <p className="mt-6 text-center text-xs text-ivory/45">
+          Test mode — card <code>4242 4242 4242 4242</code>, any future expiry &amp; CVC.
         </p>
       </div>
     </main>
