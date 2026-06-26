@@ -292,3 +292,337 @@
   text-align: center;
 }
 .loadscreen .loadbar { background: rgba(18, 63, 57, 0.12); }
+
+/* ============================================================
+   THE GLOW ROOM — the once-a-day cozy ritual (/play).
+   A single immersive "scene" you open once a day: tend a few
+   spots, watch the room (and your avatar) bloom, come back
+   tomorrow. The room's warmth is driven by --bloom (0..1 =
+   today's tasks done / total), set on .room-shell.
+   ============================================================ */
+
+/* phone-sized frame for the immersive room (sibling of .play-col) */
+.room-col {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  background-color: var(--color-ivory);
+  background-image:
+    radial-gradient(900px 360px at 50% -8%, rgba(226, 120, 90, 0.1), transparent 60%),
+    radial-gradient(700px 340px at 100% 6%, rgba(224, 162, 60, 0.1), transparent 55%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 30px 80px -22px rgba(0, 0, 0, 0.55);
+}
+@media (min-width: 520px) {
+  .room-col {
+    border-radius: 28px;
+    margin: 16px auto;
+    min-height: calc(100dvh - 32px);
+  }
+}
+
+.room-shell {
+  --bloom: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100dvh;
+  padding: 16px 16px 28px;
+}
+@media (min-width: 520px) {
+  .room-shell { min-height: calc(100dvh - 32px); }
+}
+
+/* ---- HUD ---- */
+.room-hud {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--color-spruce), var(--color-spruce-dark));
+  color: var(--color-ivory);
+  box-shadow: 0 10px 24px -14px rgba(14, 54, 49, 0.7);
+}
+.room-hud-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  width: 32px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: rgba(251, 248, 241, 0.12);
+  color: var(--color-ivory);
+}
+.room-lvl {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-coral);
+  color: #fff;
+  font-weight: 800;
+}
+.room-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--color-ivory);
+}
+
+/* ---- The scene ---- */
+.scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.04;
+  border-radius: 26px;
+  overflow: hidden;
+  border: 2px solid var(--color-line);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5),
+    0 16px 34px -16px rgba(18, 63, 57, 0.4);
+  transition: box-shadow 0.6s ease;
+}
+.scene-bloom {
+  box-shadow:
+    inset 0 0 60px -8px rgba(224, 162, 60, 0.45),
+    0 16px 40px -14px rgba(226, 120, 90, 0.5);
+}
+
+/* back wall — dim and cool at rest, warm sunlit as the day blooms */
+.scene-wall {
+  position: absolute;
+  inset: 0 0 38% 0;
+  background: linear-gradient(180deg, #eaddc6, #f3e7d2);
+}
+.scene-wall::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 221, 150, 0.85), rgba(255, 196, 140, 0.2));
+  opacity: calc(0.12 + 0.7 * var(--bloom));
+  transition: opacity 0.6s ease;
+}
+.scene-floor {
+  position: absolute;
+  inset: 62% 0 0 0;
+  background: linear-gradient(180deg, #e7cfa9, #d8b483);
+}
+.scene-floor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 50% 0%, rgba(255, 214, 140, 0.6), transparent 70%);
+  opacity: calc(0.1 + 0.65 * var(--bloom));
+  transition: opacity 0.6s ease;
+}
+
+/* window with a sun that rises as you finish today */
+.scene-window {
+  position: absolute;
+  top: 12%;
+  left: 9%;
+  width: 30%;
+  height: 42%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 4px solid #d9c4a0;
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.3);
+}
+.scene-sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #2f5b6e, #4d7d8c);
+  transition: background 0.6s ease;
+}
+.scene-bloom .scene-sky { background: linear-gradient(180deg, #8fd0e6, #d9f0ee); }
+.scene-sun {
+  position: absolute;
+  left: 50%;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 50%, #fff4cf, var(--color-honey));
+  box-shadow: 0 0 18px 6px rgba(224, 162, 60, 0.6);
+  transform: translateX(-50%);
+  top: calc(78% - 64% * var(--bloom));
+  transition: top 0.6s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* a shelf of plants that grows as days are cleared */
+.scene-shelf {
+  position: absolute;
+  top: 16%;
+  right: 8%;
+  display: flex;
+  gap: 5px;
+  align-items: flex-end;
+}
+.scene-plant {
+  width: 9px;
+  height: 16px;
+  border-radius: 50% 50% 40% 40%;
+  background: linear-gradient(180deg, #7fb890, var(--color-sage));
+  box-shadow: 0 2px 0 -1px rgba(0, 0, 0, 0.12);
+}
+.scene-plant:nth-child(even) { height: 22px; }
+
+/* the avatar on the floor, brighter as the room blooms */
+.scene-avatar {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.scene-avatar-glow {
+  position: absolute;
+  inset: -18%;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(224, 162, 60, 0.55), transparent 65%);
+  opacity: calc(0.2 + 0.8 * var(--bloom));
+  filter: blur(6px);
+  transition: opacity 0.6s ease;
+}
+
+/* ---- Stations: the spots in your room you tend today ---- */
+.station {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.station-ic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  color: var(--accent);
+  background: var(--soft);
+  border: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 6px 0 -1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 10px 18px -10px rgba(18, 63, 57, 0.4);
+  transition: transform 0.12s ease, filter 0.2s ease;
+}
+.station-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-spruce);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.station-bang {
+  position: absolute;
+  top: -7px;
+  right: -2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  width: 18px;
+  border-radius: 999px;
+  background: var(--color-coral);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow: 0 2px 6px -1px rgba(226, 120, 90, 0.8);
+}
+.station-todo .station-ic { animation: station-bob 2.2s ease-in-out infinite; }
+.station-todo:hover .station-ic { transform: translateY(-2px); filter: brightness(1.05); }
+.station-todo:active .station-ic { transform: translateY(2px); }
+.station-done .station-ic {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 0 -1px color-mix(in srgb, var(--accent) 55%, black 10%);
+}
+.station-done .station-label { color: var(--color-muted); }
+@keyframes station-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ---- Caption + actions ---- */
+.room-note {
+  text-align: center;
+  padding: 0 6px;
+}
+.room-note-final h1 { color: var(--color-spruce); }
+.room-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.room-actions .btn-game { flex: 1; max-width: 220px; }
+
+/* ---- Task sheet (bottom sheet) ---- */
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(14, 54, 49, 0.5);
+  backdrop-filter: blur(3px);
+  animation: sheet-fade 0.2s ease both;
+  padding: 10px;
+}
+.sheet {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  background: #fff;
+  border: 2px solid var(--color-line);
+  border-radius: 26px;
+  padding: 26px 22px 22px;
+  box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.4);
+  animation: sheet-up 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.sheet-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  width: 30px;
+  border-radius: 10px;
+  color: var(--color-muted);
+  background: var(--color-ivory);
+}
+.sheet-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  width: 56px;
+  margin: 0 auto 4px;
+  border-radius: 18px;
+  color: var(--accent);
+  background: var(--soft);
+  border: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+@keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-up { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }

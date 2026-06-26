@@ -334,6 +334,31 @@ export default async function DashboardPage({
         </div>
       </div>
 
+      {/* ── ENTER YOUR GLOW ROOM: the new once-a-day cozy ritual (the game) ── */}
+      {!challengeComplete && (
+        <Link
+          href="/play"
+          className="group mt-5 flex items-center gap-4 overflow-hidden rounded-3xl border-2 border-honey/40 bg-gradient-to-br from-honey-light to-coral-light p-4 shadow-sm transition hover:border-honey"
+        >
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-full bg-honey/30 blur-md" />
+            <Avatar stage={stageFromLevel(level.level)} size={56} float={false} className="relative" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-game text-teal">
+              <Sparkles className="h-3.5 w-3.5" /> New · play
+            </div>
+            <div className="font-display text-lg font-extrabold leading-tight text-spruce">
+              Enter your Glow Room
+            </div>
+            <p className="text-xs text-muted">
+              Today&apos;s glow up, the cozy way — one tap each.
+            </p>
+          </div>
+          <ArrowRight className="h-5 w-5 shrink-0 text-coral transition group-hover:translate-x-0.5" />
+        </Link>
+      )}
+
       {/* Streak loss-aversion: when today isn't done yet and a streak is on the
           line, make the cost of skipping visible. */}
       {!challengeComplete && !todayComplete && streak >= 1 && (
