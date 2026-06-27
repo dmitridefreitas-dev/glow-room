@@ -627,6 +627,104 @@
 @keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sheet-up { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
 
+/* the "did this" flag + undo link inside the task sheet */
+.room-doneflag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 800;
+  color: var(--color-sage);
+}
+.sheet-undo {
+  display: block;
+  margin: 10px auto 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Today's note + photo card */
+.room-journal {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: #fff;
+  border: 2px solid var(--color-line);
+  border-radius: 22px;
+  box-shadow: 0 10px 0 -4px rgba(18, 63, 57, 0.05), 0 14px 26px -16px rgba(18, 63, 57, 0.25);
+}
+.room-journal-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-teal);
+}
+.room-journal-head .opt {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-muted);
+}
+.room-journal textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  background: var(--color-ivory);
+  color: var(--color-ink);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.room-journal textarea:focus { border-color: var(--color-teal); }
+.room-journal-photo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.room-journal-thumb {
+  height: 56px;
+  width: 56px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid var(--color-line);
+}
+.room-journal-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56px;
+  width: 56px;
+  border-radius: 14px;
+  background: var(--color-ivory);
+  border: 1px dashed var(--color-line);
+  color: var(--color-muted);
+}
+.room-photo-btn {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-teal);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.room-journal-hint {
+  font-size: 11px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
 /* ============================================================
    QUEST MAP — a winding river of stepping stones (the journey).
    Grassy banks, a flowing-water current, a golden "crossed"

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getEnrollmentForUser } from "@/lib/cohort";
 import { scoreFor, tierProgress } from "@/lib/points";
 import { levelFor } from "@/lib/level";
@@ -79,7 +80,7 @@ export default async function PlayPage() {
     supabase
       .from("check_ins")
       .select(
-        "day_number, movement_done, skin_done, mindset_done, anchor_done"
+        "day_number, movement_done, skin_done, mindset_done, anchor_done, reflection, photo_path"
       )
       .eq("enrollment_id", enrollment.enrollmentId),
     supabase
@@ -104,6 +105,20 @@ export default async function PlayPage() {
 
   const todayRow = byDay.get(today);
   const challengeComplete = completed === total;
+
+  // Today's optional note + photo (the room is a full check-in on its own).
+  const todayNote =
+    (todayRow as { reflection?: string | null } | undefined)?.reflection ?? "";
+  const todayPhotoPath =
+    (todayRow as { photo_path?: string | null } | undefined)?.photo_path ?? null;
+  let todayPhotoUrl: string | null = null;
+  if (todayPhotoPath) {
+    const admin = createAdminClient();
+    const { data: signed } = await admin.storage
+      .from("checkin-photos")
+      .createSignedUrl(todayPhotoPath, 60 * 60);
+    todayPhotoUrl = signed?.signedUrl ?? null;
+  }
 
   const score = scoreFor(completed, today);
   const rank = tierProgress(score);
@@ -135,6 +150,8 @@ export default async function PlayPage() {
       tierLabel={rank.current.label}
       stations={stations}
       challengeComplete={challengeComplete}
+      note={todayNote}
+      photoUrl={todayPhotoUrl}
     />
   );
 }

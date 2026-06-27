@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,12 +13,14 @@ import {
   Zap,
   X,
   Share2,
+  Camera,
+  Pencil,
   Map as MapIcon,
   type LucideIcon,
 } from "lucide-react";
 import { Avatar, stageFromLevel } from "@/components/game/Avatar";
 import { Celebrate } from "@/components/Celebrate";
-import { logPillar } from "@/app/play/actions";
+import { logPillar, saveDayExtras } from "@/app/play/actions";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 export type Station = {
@@ -38,6 +40,8 @@ type Props = {
   tierLabel: string;
   stations: Station[];
   challengeComplete: boolean;
+  note: string;
+  photoUrl: string | null;
 };
 
 // Per-pillar identity: icon + accent. Each station is one "spot" in your room.
@@ -78,9 +82,12 @@ export function GlowRoom({
   tierLabel,
   stations,
   challengeComplete,
+  note: initialNote,
+  photoUrl,
 }: Props) {
   const router = useRouter();
   const [busy, start] = useTransition();
+  const [savingExtras, startExtras] = useTransition();
 
   const [done, setDone] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(stations.map((s) => [s.key, s.done]))
@@ -89,27 +96,58 @@ export function GlowRoom({
   const [err, setErr] = useState<string | null>(null);
   const [justCompleted, setJustCompleted] = useState(false);
 
+  // Journal: today's note + photo.
+  const [note, setNote] = useState(initialNote);
+  const [preview, setPreview] = useState<string | null>(photoUrl);
+  const [extrasErr, setExtrasErr] = useState<string | null>(null);
+  const [extrasSaved, setExtrasSaved] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const totalToday = stations.length;
   const doneToday = stations.reduce((n, s) => n + (done[s.key] ? 1 : 0), 0);
-  const allDoneInit = useMemo(
-    () => stations.every((s) => s.done),
-    [stations]
-  );
+  const allDoneInit = useMemo(() => stations.every((s) => s.done), [stations]);
   const allDone = doneToday === totalToday;
   const bloom = totalToday > 0 ? doneToday / totalToday : 0;
   const spots = SPOTS[totalToday] ?? SPOTS[4];
 
-  function complete(s: Station) {
+  function setPillar(s: Station, value: boolean) {
     setErr(null);
     start(async () => {
-      const res = await logPillar(s.key);
+      const res = await logPillar(s.key, value);
       if (!res.ok) {
         setErr(res.error);
         return;
       }
-      setDone((p) => ({ ...p, [s.key]: true }));
-      setActive(null);
-      if (res.allDone && !allDoneInit) setJustCompleted(true);
+      setDone((p) => ({ ...p, [s.key]: value }));
+      if (value) {
+        if (res.allDone && !allDoneInit) setJustCompleted(true);
+        setActive(null); // marking done closes the sheet — a small reward
+      }
+      router.refresh();
+    });
+  }
+
+  function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setPreview(URL.createObjectURL(f));
+    setExtrasSaved(false);
+    setExtrasErr(null);
+  }
+
+  function saveExtras() {
+    setExtrasErr(null);
+    startExtras(async () => {
+      const fd = new FormData();
+      fd.set("note", note);
+      const f = fileRef.current?.files?.[0];
+      if (f) fd.set("photo", f);
+      const res = await saveDayExtras(fd);
+      if (!res.ok) {
+        setExtrasErr(res.error);
+        return;
+      }
+      setExtrasSaved(true);
       router.refresh();
     });
   }
@@ -129,8 +167,6 @@ export function GlowRoom({
       /* user dismissed the share sheet — nothing to do */
     }
   }
-
-  const restful = allDone; // the room is "at rest / bloomed" when today is done
 
   return (
     <div className="room-shell" style={{ ["--bloom" as string]: bloom }}>
@@ -164,14 +200,12 @@ export function GlowRoom({
       </header>
 
       {/* ── The room scene ── */}
-      <div className={`scene ${restful ? "scene-bloom" : ""}`}>
-        {/* back wall + window; the sky brightens as today blooms */}
+      <div className={`scene ${allDone ? "scene-bloom" : ""}`}>
         <div className="scene-wall" aria-hidden="true">
           <div className="scene-window">
             <span className="scene-sky" />
             <span className="scene-sun" />
           </div>
-          {/* a little shelf of plants that grows with days cleared */}
           <div className="scene-shelf">
             {Array.from({ length: Math.min(6, Math.ceil(completed / 5)) }, (_, i) => (
               <span key={i} className="scene-plant" />
@@ -180,13 +214,12 @@ export function GlowRoom({
         </div>
         <div className="scene-floor" aria-hidden="true" />
 
-        {/* the avatar, glowing brighter the more of today is done */}
         <div className="scene-avatar">
           <div className="scene-avatar-glow" />
           <Avatar stage={stageFromLevel(level.level)} size={120} />
         </div>
 
-        {/* stations — the spots in your room to tend today */}
+        {/* stations — tap any (done or not) to open it */}
         {stations.map((s, i) => {
           const { Icon, accent, soft } = LOOK[s.key];
           const isDone = done[s.key];
@@ -195,7 +228,7 @@ export function GlowRoom({
             <button
               key={s.key}
               type="button"
-              onClick={() => (isDone ? undefined : setActive(s))}
+              onClick={() => setActive(s)}
               className={`station ${isDone ? "station-done" : "station-todo"}`}
               style={{
                 left: `${at.x}%`,
@@ -204,9 +237,8 @@ export function GlowRoom({
                 ["--soft" as string]: soft,
               }}
               aria-label={
-                isDone ? `${s.label} — done today` : `${s.label} — tap to do today's task`
+                isDone ? `${s.label} — done today, tap to review` : `${s.label} — tap to do today's task`
               }
-              disabled={isDone}
             >
               <span className="station-ic">
                 {isDone ? <Check className="h-5 w-5" strokeWidth={3} /> : <Icon className="h-5 w-5" strokeWidth={2.4} />}
@@ -249,7 +281,60 @@ export function GlowRoom({
         </div>
       )}
 
-      {/* ── Actions ── */}
+      {/* ── Today's note + photo (the room is a full check-in on its own) ── */}
+      <div className="room-journal">
+        <div className="room-journal-head">
+          <Pencil className="h-3.5 w-3.5" /> Today&apos;s note &amp; photo
+          <span className="opt">optional</span>
+        </div>
+        <textarea
+          value={note}
+          onChange={(e) => {
+            setNote(e.target.value);
+            setExtrasSaved(false);
+          }}
+          placeholder="How did today go? A win, a feeling, anything…"
+          rows={2}
+        />
+        <div className="room-journal-photo">
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={preview} alt="Today" className="room-journal-thumb" />
+          ) : (
+            <span className="room-journal-ph" aria-hidden="true">
+              <Camera className="h-5 w-5" />
+            </span>
+          )}
+          <button
+            type="button"
+            className="room-photo-btn"
+            onClick={() => fileRef.current?.click()}
+          >
+            {preview ? "Change photo" : "Add today's photo"}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={pickFile}
+          />
+        </div>
+        {extrasErr && <p className="text-center text-sm font-medium text-coral">{extrasErr}</p>}
+        <button
+          type="button"
+          onClick={saveExtras}
+          disabled={savingExtras}
+          className="btn-game btn-ivory"
+        >
+          {savingExtras ? "Saving…" : extrasSaved ? "Saved ✓" : "Save note & photo"}
+        </button>
+        <p className="room-journal-hint">
+          Private — only you see your photo. Day 1 vs. now becomes your before/after.
+        </p>
+      </div>
+
+      {/* ── Actions when today is done ── */}
       {allDone && (
         <div className="room-actions">
           <button type="button" onClick={share} className="btn-game btn-primary">
@@ -294,18 +379,44 @@ export function GlowRoom({
               </p>
               <p className="mt-2 text-lg font-semibold text-ink">{active.task}</p>
             </div>
-            {err && <p className="mt-3 text-center text-sm font-medium text-coral">{err}</p>}
-            <button
-              type="button"
-              onClick={() => complete(active)}
-              disabled={busy}
-              className="btn-game btn-primary mt-5 w-full"
-            >
-              {busy ? "Saving…" : "I did it ✓"}
-            </button>
-            <p className="mt-2 text-center text-[11px] text-muted">
-              One tap. That&apos;s all today asks.
-            </p>
+
+            {done[active.key] ? (
+              <>
+                <div className="room-doneflag mt-4">
+                  <Check className="h-4 w-4" strokeWidth={3} /> You did this today
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActive(null)}
+                  className="btn-game btn-primary mt-2 w-full"
+                >
+                  Nice — close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPillar(active, false)}
+                  disabled={busy}
+                  className="sheet-undo"
+                >
+                  {busy ? "…" : "Mark as not done"}
+                </button>
+              </>
+            ) : (
+              <>
+                {err && <p className="mt-3 text-center text-sm font-medium text-coral">{err}</p>}
+                <button
+                  type="button"
+                  onClick={() => setPillar(active, true)}
+                  disabled={busy}
+                  className="btn-game btn-primary mt-5 w-full"
+                >
+                  {busy ? "Saving…" : "I did it ✓"}
+                </button>
+                <p className="mt-2 text-center text-[11px] text-muted">
+                  One tap. That&apos;s all today asks.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
