@@ -929,3 +929,37 @@
 }
 .reframe-input:focus { border-color: var(--color-teal); }
 .reframe-input::placeholder { color: #9ca29a; }
+
+/* box-breathing pacer (Ground yourself) */
+.breathe-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  height: 220px;
+}
+.breathe-circle {
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 38%, #d7f0ec, var(--color-teal));
+  box-shadow: 0 0 60px -8px rgba(44, 122, 112, 0.55);
+  animation: box-breath 16s ease-in-out infinite;
+}
+.breathe-word {
+  position: absolute;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+@keyframes box-breath {
+  0% { transform: scale(0.55); }
+  25% { transform: scale(1); }
+  50% { transform: scale(1); }
+  75% { transform: scale(0.55); }
+  100% { transform: scale(0.55); }
+}

@@ -7,20 +7,14 @@ export const metadata = {
 };
 
 const LIVE = [
-  {
-    href: "/reframe",
-    title: "Reframe a thought",
-    blurb: "Catch a heavy thought and practice talking back to it.",
-    mins: "~3 min",
-  },
+  { href: "/reframe", title: "Reframe a thought", blurb: "Catch a heavy thought and practice talking back to it.", mins: "~3 min" },
+  { href: "/breathe", title: "Ground yourself", blurb: "Box breathing — no typing, just follow the circle.", mins: "~2 min" },
+  { href: "/worry", title: "Untangle a worry", blurb: "Lay a worry out so it stops looping in your head.", mins: "~3 min" },
+  { href: "/wins", title: "Three good things", blurb: "Train your brain to notice what went right.", mins: "~2 min" },
+  { href: "/kinder", title: "Be kinder to yourself", blurb: "Trade the harsh inner voice for the one you'd use on a friend.", mins: "~2 min" },
 ];
 
-const SOON = [
-  "Untangle a worry",
-  "Ground yourself — breathing",
-  "Three good things",
-  "Be kinder to yourself",
-];
+const SOON: string[] = [];
 
 export default function ToolsPage() {
   return (
