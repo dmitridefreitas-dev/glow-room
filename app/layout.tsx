@@ -17,19 +17,19 @@ const bricolage = Bricolage_Grotesque({
 });
 
 const description =
-  "A Gen Z digital wellness platform. Structured 30-day challenges — movement, skin, mindset, and one daily habit — done together in cohorts.";
+  "Structure for the days that feel impossible — one small step at a time. CBT-informed self-help for when getting started is the hardest part.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
   ),
   title: {
-    default: "The Glow Room — 30-Day Glow Up Challenge",
+    default: "The Glow Room",
     template: "%s · The Glow Room",
   },
   description,
   openGraph: {
-    title: "The Glow Room — 30-Day Glow Up Challenge",
+    title: "The Glow Room — one small thing at a time",
     description,
     type: "website",
     siteName: "The Glow Room",
