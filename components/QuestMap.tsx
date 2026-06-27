@@ -31,8 +31,8 @@ function milestonesFor(total: number): Map<number, Milestone> {
   return m;
 }
 
-const RUNG_H = 34; // px of height per day (rung spacing)
-const PAD = 22; // top/bottom breathing room
+const RUNG_H = 18; // px of height per day (rung spacing) — compact so the whole
+const PAD = 16; //    climb fits roughly one phone screen without a long scroll
 
 export function QuestMap({
   nodes,
@@ -91,16 +91,16 @@ export function QuestMap({
         const isToday = n.day === today;
 
         let rungClass = "rung-locked";
-        let icon: React.ReactNode = <Lock className="h-3 w-3 opacity-70" />;
+        let icon: React.ReactNode = <Lock className="h-2.5 w-2.5 opacity-70" />;
         if (n.state === "complete") {
           rungClass = "rung-complete";
-          icon = <Check className="h-3.5 w-3.5" strokeWidth={3.2} />;
+          icon = <Check className="h-3 w-3" strokeWidth={3.2} />;
         } else if (n.state === "today") {
           rungClass = "rung-today";
           icon = null; // the avatar marks today
         } else if (n.state === "missed") {
           rungClass = "rung-missed";
-          icon = <X className="h-3.5 w-3.5" strokeWidth={3} />;
+          icon = <X className="h-3 w-3" strokeWidth={3} />;
         }
 
         return (
@@ -139,7 +139,7 @@ export function QuestMap({
       {/* the climber — your avatar, standing on today's rung */}
       <span className="climber-ring" style={{ top: todayY, left: "50%" }} aria-hidden="true" />
       <span className="climber" style={{ top: todayY, left: "50%" }}>
-        <Avatar stage={avatarStage} size={54} float={false} />
+        <Avatar stage={avatarStage} size={38} float={false} />
         <span className="climber-tag">You · Day {today}</span>
       </span>
     </div>
@@ -147,7 +147,7 @@ export function QuestMap({
 }
 
 function milestoneIcon(kind: Milestone["kind"]) {
-  if (kind === "final") return <Crown className="h-3.5 w-3.5" strokeWidth={2.4} />;
-  if (kind === "boss") return <Swords className="h-3.5 w-3.5" strokeWidth={2.4} />;
-  return <Flag className="h-3.5 w-3.5" strokeWidth={2.6} />;
+  if (kind === "final") return <Crown className="h-3 w-3" strokeWidth={2.4} />;
+  if (kind === "boss") return <Swords className="h-3 w-3" strokeWidth={2.4} />;
+  return <Flag className="h-3 w-3" strokeWidth={2.6} />;
 }
