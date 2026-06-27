@@ -1,5 +1,11 @@
 # v2 — "The Next Small Thing"  (proposed simplest pathway)
 
+> **Status: prototype shipped at `/today`** (2026-06-27). Public, no login,
+> localStorage-only — nothing touches the live backend. Content lives in
+> `lib/structures.ts` (3 starter structures); the screen is `components/today/
+> TodayFlow.tsx`. Next: swap in the founder's real templates; consider PWA install
+> + reminders; decide whether `/today` becomes the front door.
+
 A calm daily companion that hands you your day **one small step at a time**. Not a
 game you play — a guide that says *"here's the next thing,"* you do it, it says
 *"that's you,"* and gives you the next. Repeat until your day has shape.
