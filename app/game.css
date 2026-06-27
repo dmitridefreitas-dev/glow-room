@@ -648,9 +648,9 @@
   pointer-events: none;
 }
 
-/* flowing current along the river / golden trail */
-.river-flow { animation: river-flow 3s linear infinite; }
-.trail-flow { animation: river-flow 1.9s linear infinite; }
+/* flowing current along the river / golden trail — a slow, calm drift */
+.river-flow { animation: river-flow 20s linear infinite; }
+.trail-flow { animation: river-flow 14s linear infinite; }
 @keyframes river-flow { to { stroke-dashoffset: -120; } }
 
 /* lily pads drifting on the banks */
