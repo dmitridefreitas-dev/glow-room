@@ -70,10 +70,20 @@ export function TodayFlow() {
   // client-only. This one-time sync from an external store is the intended use.)
   useEffect(() => {
     const s = load();
-    const d = new Set(s.structures[DEFAULT_STRUCTURE] ?? []);
-    const idx = Math.max(0, firstPending(structureById(DEFAULT_STRUCTURE).steps.length, d));
+    // If the intake built a plan, open the structure it chose.
+    let sid = DEFAULT_STRUCTURE;
+    try {
+      const p = JSON.parse(localStorage.getItem("glow_plan_v1") ?? "null");
+      const planned = p?.plan?.structureId;
+      if (planned && STRUCTURES.some((x) => x.id === planned)) sid = planned;
+    } catch {
+      /* ignore */
+    }
+    const d = new Set(s.structures[sid] ?? []);
+    const idx = Math.max(0, firstPending(structureById(sid).steps.length, d));
     /* eslint-disable react-hooks/set-state-in-effect -- one-time hydrate from localStorage */
     setDoneByStruct(s.structures);
+    setStructureId(sid);
     setViewIdx(idx);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
@@ -161,7 +171,10 @@ export function TodayFlow() {
           </div>
         </div>
 
-        <Link href="/" className="mt-8 text-xs font-semibold text-muted underline-offset-2 hover:underline">
+        <Link href="/start" className="mt-7 text-xs font-semibold text-teal underline-offset-2 hover:underline">
+          Re-do my plan
+        </Link>
+        <Link href="/" className="mt-2 text-xs font-semibold text-muted underline-offset-2 hover:underline">
           Close for now
         </Link>
       </main>
