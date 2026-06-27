@@ -61,6 +61,25 @@ export function QuestMap({
       style={{ height }}
       aria-label={`Climb — day ${today} of ${total}`}
     >
+      {/* progress spine running behind the day chips — faint full track, with the
+          lower portion (day 1 up to today) filled to show how far you've climbed */}
+      <span
+        className="ladder-track"
+        style={{ left: "20%", top: centerY(total), height: (total - 1) * RUNG_H }}
+        aria-hidden="true"
+      />
+      {today > 1 && (
+        <span
+          className="ladder-track-fill"
+          style={{
+            left: "20%",
+            top: centerY(Math.min(today, total)),
+            height: (Math.min(today, total) - 1) * RUNG_H,
+          }}
+          aria-hidden="true"
+        />
+      )}
+
       {/* the two rails */}
       <span className="ladder-rail" style={{ top: railTop, height: railH, left: "33%" }} aria-hidden="true" />
       <span className="ladder-rail" style={{ top: railTop, height: railH, left: "67%" }} aria-hidden="true" />
