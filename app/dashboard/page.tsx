@@ -27,7 +27,6 @@ import { Avatar, stageFromLevel } from "@/components/game/Avatar";
 import {
   type CheckInRow,
   dayComplete,
-  dayStarted,
   doneCount,
   totalTasks,
 } from "@/lib/progress";
@@ -171,18 +170,17 @@ export default async function DashboardPage({
   const rank = tierProgress(score);
   const level = levelFor(score);
 
-  // Quest-map nodes: the same per-day state the old grid used, shaped for the
-  // winding level-path. Completion wins over "today" so a finished current day
-  // still shows its check; the "you are here" marker is keyed off `today`.
+  // Quest-ladder rungs. A past day you didn't finish is "missed" (a broken rung),
+  // shown beneath the climber so the gaps are always visible. Completion wins over
+  // "today", so a finished current day still reads as cleared.
   const questNodes: QuestNode[] = Array.from({ length: total }, (_, i) => {
     const d = i + 1;
     const c = byDay.get(d);
     let state: QuestNode["state"];
     if (dayComplete(c, type)) state = "complete";
     else if (d === today) state = "today";
-    else if (dayStarted(c, type)) state = "started";
-    else if (d > today) state = "locked";
-    else state = "available";
+    else if (d < today) state = "missed";
+    else state = "locked";
     return { day: d, state };
   });
 
@@ -366,7 +364,12 @@ export default async function DashboardPage({
         </span>
       </div>
       <div className="mt-3 rounded-3xl border border-line bg-white p-3 pt-7 shadow-sm">
-        <QuestMap nodes={questNodes} today={today} total={total} />
+        <QuestMap
+          nodes={questNodes}
+          today={today}
+          total={total}
+          avatarStage={stageFromLevel(level.level)}
+        />
       </div>
 
       {/* Before / after reveal — your own most motivating proof. Only shows once
