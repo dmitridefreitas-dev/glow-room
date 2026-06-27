@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { GlowNav } from "@/components/glow/GlowNav";
 
 export const metadata = {
   title: "Practices",
@@ -18,7 +19,7 @@ const SOON: string[] = [];
 
 export default function ToolsPage() {
   return (
-    <main className="mx-auto min-h-dvh max-w-md px-6 py-8">
+    <main className="mx-auto min-h-dvh max-w-md px-6 pt-8 pb-28">
       <Link href="/today" className="flex items-center gap-1 text-sm font-bold text-teal">
         <ArrowLeft className="h-4 w-4" /> Today
       </Link>
@@ -65,6 +66,7 @@ export default function ToolsPage() {
         <strong className="text-spruce">988</strong> (US Suicide &amp; Crisis Lifeline), or your local
         emergency number.
       </p>
+      <GlowNav />
     </main>
   );
 }

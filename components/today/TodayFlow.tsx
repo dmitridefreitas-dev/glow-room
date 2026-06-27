@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, ArrowRight } from "lucide-react";
 import { Avatar } from "@/components/game/Avatar";
+import { GlowNav } from "@/components/glow/GlowNav";
 import {
   STRUCTURES,
   DEFAULT_STRUCTURE,
@@ -134,7 +135,8 @@ export function TodayFlow() {
   // ── Rest / finished screen ──
   if (resting || allDone) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 py-12 text-center">
+      <>
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 pt-12 pb-28 text-center">
         <Avatar stage={Math.max(2, stage)} size={132} />
         <h1 className="mt-4 font-display text-3xl font-extrabold text-spruce">
           {allDone ? "That's the whole list." : "Rest now."}
@@ -178,6 +180,8 @@ export function TodayFlow() {
           Close for now
         </Link>
       </main>
+      <GlowNav />
+      </>
     );
   }
 
@@ -186,7 +190,8 @@ export function TodayFlow() {
 
   // ── The one step ──
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-6 py-8">
+    <>
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-6 pt-8 pb-28">
       {/* gentle progress — small, never a scoreboard */}
       <div className="flex items-center gap-3">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-line">
@@ -251,5 +256,7 @@ export function TodayFlow() {
         </div>
       </div>
     </main>
+    <GlowNav />
+    </>
   );
 }
