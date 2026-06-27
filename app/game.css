@@ -747,7 +747,7 @@
 /* the two rails */
 .ladder-rail {
   position: absolute;
-  width: 8px;
+  width: 9px;
   transform: translateX(-50%);
   border-radius: 5px;
   background: linear-gradient(180deg, #d0a36c, #a87b4d);
@@ -757,14 +757,14 @@
 /* progress spine behind the day chips */
 .ladder-track {
   position: absolute;
-  width: 4px;
+  width: 5px;
   transform: translateX(-50%);
   border-radius: 999px;
   background: rgba(18, 63, 57, 0.12);
 }
 .ladder-track-fill {
   position: absolute;
-  width: 4px;
+  width: 5px;
   transform: translateX(-50%);
   border-radius: 999px;
   background: linear-gradient(180deg, var(--color-coral), var(--color-honey));
@@ -776,7 +776,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 18px;
+  height: 23px;
   transform: translateY(-50%);
   display: block;
 }
@@ -785,12 +785,12 @@
 .rung {
   position: absolute;
   top: 50%;
-  height: 6px;
+  height: 7px;
   transform: translateY(-50%);
   border-radius: 4px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 5px -3px rgba(18, 63, 57, 0.4);
 }
-.rung-ms { height: 8px; border-radius: 5px; }
+.rung-ms { height: 9px; border-radius: 5px; }
 .rung-complete { background: linear-gradient(180deg, #8fc79f, #5d9070); }
 .rung-today {
   background: linear-gradient(180deg, #f0997e, #e2785a);
@@ -812,19 +812,19 @@
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  min-width: 15px;
-  height: 15px;
-  padding: 0 3px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
   font-family: var(--font-display);
-  font-size: 8.5px;
+  font-size: 11px;
   font-weight: 800;
   background: #fff;
   color: var(--color-spruce);
-  box-shadow: 0 1px 3px -1px rgba(18, 63, 57, 0.4);
+  box-shadow: 0 2px 4px -2px rgba(18, 63, 57, 0.4);
 }
 .rung-num-complete { background: var(--color-sage); color: #fff; }
 .rung-num-today { background: var(--color-coral); color: #fff; }
@@ -858,11 +858,11 @@
 .rung-flag-turn { color: var(--color-teal); }
 .rung-flag-final { color: var(--color-honey); }
 .rung-flag-label {
-  padding: 0 5px;
+  padding: 1px 5px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.82);
   color: var(--color-spruce);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -881,11 +881,11 @@
 }
 .climber-tag {
   margin-top: -3px;
-  padding: 0 5px;
+  padding: 1px 6px;
   border-radius: 999px;
   background: var(--color-spruce);
   color: var(--color-ivory);
-  font-size: 7.5px;
+  font-size: 8.5px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -899,8 +899,8 @@
 .climber-ring {
   position: absolute;
   z-index: 5;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   transform: translate(-50%, -50%);
   border-radius: 999px;
   background: radial-gradient(circle, rgba(224, 162, 60, 0.45), transparent 65%);
