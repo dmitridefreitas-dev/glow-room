@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
 import { Avatar } from "@/components/game/Avatar";
 import {
   STRUCTURES,
@@ -135,7 +135,14 @@ export function TodayFlow() {
           {done.length > 0 ? " That's you climbing." : " That's okay. Tomorrow we go again."}
         </p>
 
-        <div className="mt-9 w-full">
+        <Link
+          href="/tools"
+          className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl bg-coral py-3.5 font-bold text-white shadow-md transition active:translate-y-0.5"
+        >
+          Practice a skill <ArrowRight className="h-4 w-4" />
+        </Link>
+
+        <div className="mt-6 w-full">
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-teal">
             Another small list?
           </p>
