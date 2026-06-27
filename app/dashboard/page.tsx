@@ -365,7 +365,7 @@ export default async function DashboardPage({
           Day {today} of {total} 🗺️
         </span>
       </div>
-      <div className="mt-3 rounded-3xl border border-line bg-white p-4 shadow-sm sm:p-6">
+      <div className="mt-3 rounded-3xl border border-line bg-white p-3 pt-7 shadow-sm">
         <QuestMap nodes={questNodes} today={today} total={total} />
       </div>
 

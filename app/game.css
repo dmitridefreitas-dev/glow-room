@@ -626,3 +626,170 @@
 }
 @keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sheet-up { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ============================================================
+   QUEST MAP — a winding river of stepping stones (the journey).
+   Grassy banks, a flowing-water current, a golden "crossed"
+   trail, lily pads, and a bobbing "You" marker. All CSS motion.
+   ============================================================ */
+.quest-map {
+  border-radius: 20px;
+  background:
+    radial-gradient(140% 70% at 50% -12%, rgba(108, 167, 127, 0.24), transparent 60%),
+    linear-gradient(180deg, #e9f3e7, #d9ebdb);
+}
+.quest-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: radial-gradient(rgba(108, 167, 127, 0.14) 1px, transparent 1px);
+  background-size: 14px 14px;
+  pointer-events: none;
+}
+
+/* flowing current along the river / golden trail */
+.river-flow { animation: river-flow 3s linear infinite; }
+.trail-flow { animation: river-flow 1.9s linear infinite; }
+@keyframes river-flow { to { stroke-dashoffset: -120; } }
+
+/* lily pads drifting on the banks */
+.lily {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 52% 52% 48% 48%;
+  background: radial-gradient(circle at 38% 32%, #93d2a3, #5f9d76);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.14), 0 3px 6px -3px rgba(18, 63, 57, 0.45);
+  opacity: 0.85;
+  animation: lily-sway 5.5s ease-in-out infinite;
+}
+@keyframes lily-sway {
+  0%, 100% { transform: translate(-50%, -50%) rotate(-5deg); }
+  50% { transform: translate(-50%, -50%) rotate(5deg); }
+}
+
+/* stepping stones */
+.stone-pos {
+  position: absolute;
+  display: flex;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+.stone-pos:hover { z-index: 20; }
+.stone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: #fff;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 5px 0 -1px rgba(18, 63, 57, 0.22),
+    0 10px 16px -8px rgba(18, 63, 57, 0.45);
+  transition: transform 0.15s ease;
+}
+.stone-pos:hover .stone { transform: scale(1.1); }
+
+.stone-complete { background: linear-gradient(160deg, #88c099, #5d9070); }
+.stone-started { background: linear-gradient(160deg, #f4d68b, #e0a23c); color: var(--color-spruce); }
+.stone-available {
+  background: linear-gradient(160deg, #ffffff, #ece6d7);
+  color: var(--color-muted);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.6),
+    0 4px 0 -1px rgba(18, 63, 57, 0.14),
+    0 8px 14px -8px rgba(18, 63, 57, 0.35);
+}
+.stone-locked {
+  background: linear-gradient(160deg, #d2dbde, #a9b8bd);
+  color: var(--color-muted);
+  opacity: 0.9;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 4px 0 -1px rgba(18, 63, 57, 0.18);
+}
+.stone-today {
+  background: linear-gradient(160deg, #ef8e72, #e2785a);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 5px 0 -1px #b4543c,
+    0 0 0 4px rgba(226, 120, 90, 0.22),
+    0 10px 18px -8px rgba(226, 120, 90, 0.6);
+  animation: stone-bob 2s ease-in-out infinite;
+}
+.stone-pos:hover .stone-today { animation: none; }
+.stone-boss { background: linear-gradient(160deg, #ef8e72, #e0a23c); }
+.stone-turn { background: linear-gradient(160deg, #3fa093, #2c7a70); }
+.stone-final { background: linear-gradient(160deg, #1a5a52, #e2785a); color: var(--color-ivory); }
+@keyframes stone-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+/* water ripple under today's stone */
+.stone-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+  border-radius: 18px;
+  border: 2px solid rgba(226, 120, 90, 0.55);
+  pointer-events: none;
+  z-index: 9;
+  animation: stone-ripple 2.4s ease-out infinite;
+}
+@keyframes stone-ripple {
+  0% { transform: scale(0.7); opacity: 0.7; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+
+/* the "You are here" pin */
+.stone-pin {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 9px;
+  transform: translateX(-50%);
+  z-index: 21;
+  white-space: nowrap;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--color-spruce);
+  color: var(--color-ivory);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: 0 3px 7px -2px rgba(0, 0, 0, 0.45);
+  animation: pin-bob 2s ease-in-out infinite;
+}
+.stone-pin::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--color-spruce);
+}
+@keyframes pin-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+
+/* milestone label tucked under the stone */
+.stone-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 6px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--color-spruce);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
